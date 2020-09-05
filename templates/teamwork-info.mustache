@@ -1,0 +1,54 @@
+<div class="container">
+    <div class="row mt-2">
+        {{#data}}
+            <!--span>
+                <h3 class="card-title">{{teacherinfo_title}}</h3>
+                {{^teamsharedusers}}
+                    <snap class="font-italic">{{#str}}noteams, local_teamwork{{/str}}</snap>
+                {{/teamsharedusers}}
+            </span -->
+            <div class="container">
+                <div class="row p-2 {{^teamsharedusers}}inactive-team {{/teamsharedusers}}">
+                    <h3 class="card-title">{{teacherinfo_title}}</h3>
+                </div>
+                <div class="row p-2 {{^teamsharedusers}}inactive-team {{/teamsharedusers}}">
+                    {{#teamsharedusers}}
+                        <div class="col card card-bordered m-1 p-2">
+                            <div class="">
+                                <h4 class="mb--1 mt-2">{{#str}}forteam, local_teamwork{{/str}} {{cardname}}</h4>
+                                <div>
+                                    {{#users}}
+                                        {{name}}{{^last}}, {{/last}}
+                                    {{/users}}
+                                    {{^users}}
+                                        {{#str}}nosharedusers, local_teamwork{{/str}}
+                                    {{/users}}
+                                </div>
+                            </div>
+                        </div>
+                    {{/teamsharedusers}}
+                </div>
+            </div>
+        {{/data}}
+    </div>
+    <!--div class="row">
+        <div class="col">
+            <h3>list all teams with no users</h3>
+        </div>
+            <div class="col">
+                <div class="col card card-bordered m-1 p-2">
+                    {{#data}}
+                        <div>
+                            {{^teamsharedusers}}
+                                <h3 class="card-title">{{teacherinfo_title}}</h3>
+                                <snap class="font-italic">{{#str}}noteams, local_teamwork{{/str}}</snap>
+                            {{/teamsharedusers}}
+                        </div>
+                    {{/data}}
+                </div>
+            </div>
+    </div -->
+</div>
+<style>
+.inactive-team {display: none;}
+</style>

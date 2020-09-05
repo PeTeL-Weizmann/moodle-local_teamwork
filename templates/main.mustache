@@ -1,0 +1,64 @@
+<div id = "teamwork" class = "teamwork {{#teamwork_enable}}active{{/teamwork_enable}}">
+
+
+  <div class = "teamwork_studets_wrap">
+
+    <div class = "teamwork_select">
+      <span class = "teamwork_groups">{{#str}}students, local_teamwork{{/str}}</span>
+
+    {{#if_user_teacher}}
+      <div
+        data-handler = "open_group_selection"
+        class = "teamwork_select-legend"
+        >
+        {{group_name_select}}
+      </div>
+      <div class = "teamwork_select-wrap">
+        {{#groups}}
+          <div
+            data-handler = "select_groups"
+            data-value = "{{id}}"
+            class = "teamwork_groups-item {{#firstelement}}selected{{/firstelement}}"
+            >
+            {{name}}
+          </div>
+        {{/groups}}
+      </div>
+    {{/if_user_teacher}}
+
+
+    </div>
+
+    <p class = "teamwork_studets-count">{{#str}}currentusers, local_teamwork{{/str}}<span> ({{count_all_students}}) <span></p>
+    <div id = "studentList" class = "teamwork_students draggable">
+      {{>local_teamwork/students}}
+    </div>
+    <div class = "teamwork_search">
+      <span class = "teamwork_search-label">{{#str}}search, local_teamwork{{/str}}</span>
+      <input
+        data-handler = "search_student"
+        class = "teamwork_search-input"
+        type = "text"
+        value = ""
+        name = ""
+      >
+      <button
+        data-handler = "search_reset"
+        class = "btn btn-primary">{{#str}}reset, local_teamwork{{/str}}</button>
+    </div>
+  </div>
+
+  <div class = "teamwork_content">
+    <div class = "teamwork_controls">
+      {{^if_user_student}}
+          {{>local_teamwork/controls}}
+      {{/if_user_student}}
+    </div>
+
+    <div id = "teamsCard" class = "teamwork_teams">
+      {{>local_teamwork/teams-card}}
+    </div>
+  </div>
+
+
+<div>

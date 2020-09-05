@@ -1,0 +1,379 @@
+.teamwork {
+    display: flex;
+    padding: 10px 0;
+    height: 80vh;
+    font: $font-weight-normal 1rem $font-family-text;
+
+    // students column styles
+    .teamwork_studets_wrap {
+        display: flex;
+        flex-direction: column;
+        width: 254px;
+        margin-right: 10px;
+        padding: 10px;
+        flex-shrink: 0;
+        border-radius: 5px;
+        border: 1px solid $purple;
+    }
+    .teamwork_select-legend {
+        cursor: pointer;
+        position: relative;
+        transition: .3s;
+        margin-left: auto;
+        border: 1px solid #959595;
+        font: $font-weight-normal 16px/27px $font-family-text;
+        padding: 0 5px;
+        border-radius: 5px;
+        &:active {
+            transform: translateY(5px);
+        }
+        &::after {
+            content: '\f0dc';
+            position: static;
+            font-family: 'FontAwesome';
+            border-left: 1px solid #959595;
+            display: inline-block;
+            padding: 0 5px 0 8px;
+            margin-left: 20px;
+        }
+
+    }
+
+    .teamwork_select-wrap {
+        display: none;
+        min-width: 150px;
+        position: absolute;
+        border: 1px solid #959595;
+        top: 36px;
+        right: 0;
+        background-color: #fff;
+        height: 200px;
+        overflow-y: auto;
+    }
+
+    .teamwork_groups {
+        font: $font-weight-normal 16px $font-family-text;
+    }
+    .teamwork_groups-item {
+        padding: 10px;
+        cursor: pointer;
+        &.selected {
+            background-color: #ebebeb;
+        }
+        &:hover {
+            text-shadow: 0 0 1px #000;
+        }
+    }
+    .teamwork_studets-count {
+        margin-top: 20px;
+        font: $font-weight-semibold 18px $font-family-text;
+    }
+
+    .teamwork_select {
+        display: flex;
+        align-items: center;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    select {
+        width: auto;
+        background-color: #fff;
+        border-radius: 5px;
+        height: 30px;
+        margin-left: auto;
+    }
+
+    .teamwork_students {
+        margin-top: 10px;
+        display: flex;
+        overflow-y: auto;
+        flex-direction: column;
+        flex-grow: 1;
+        border: 1px solid #959595;
+        margin-bottom: 5px;
+    }
+    .teamwork_student {
+        cursor: move;
+        padding: 5px;
+        text-overflow: ellipsis;
+        flex-shrink: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        transition: .2s;
+        border-radius: 2px;
+        border: 1px solid transparent;
+        &:hover {
+            border-color: #40167c;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.25);
+            text-shadow: 0 0 black;
+        }
+    }
+    .teamwork_search {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    .teamwork_search-label {
+        font: $font-weight-normal 16px $font-family-text;
+    }
+    .teamwork_search-input {
+        border: 1px solid #959595;
+        border-radius: 5px;
+        line-height: 30px;
+        width: 10px;
+        flex-grow: 1;
+        margin: 0 5px;
+        padding: 0 5px;
+    }
+
+
+    // content styles
+    .teamwork_content {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        padding: 10px 20px 20px;
+        border-radius: 5px;
+        border: 1px solid $purple;
+
+    }
+    .teamwork_controls {
+        display: flex;
+        flex-shrink: 0;
+    }
+
+    .teamwork_toggle-btn {
+        cursor: pointer;
+        display: flex;
+        border-radius: 5px;
+        padding: 0 10px;
+        margin-right: 20px;
+        border: 1px solid $purple;
+        align-items: center;
+        background-color: #fff;
+        transition: .2s;
+        &:hover {
+            box-shadow: 0 0 3px 2px #b1b1b1;
+        }
+    }
+    .teamwork_toggle-btn[data-handler="teamwork_toggle"] {
+        position: fixed;
+        z-index: 9999;
+        &.active {
+            position: static;
+        }
+        &.active ~ .teamwork_toggle-btn {
+            opacity: 1;
+        }
+    }
+    .teamwork_toggle-btn[data-handler="teamwork_toggle"] ~ .teamwork_toggle-btn {
+        opacity: 0;
+    }
+    .teamwork_toggle {
+        width: 30px;
+        height: 20px;
+        background-color: #dc3545; // green color
+        border-radius: 10px;
+        margin-right: 10px;
+        display: flex;
+        align-items: center;
+        padding: 0 5px;
+        .teamwork_pin {
+            width: 12px;
+            height: 12px;
+            position: relative;
+            background-color: #fff;
+            border-radius: 50%;
+            transition: .2s;
+            transform: translateX(8px);
+        }
+    }
+
+    .teamwork_toggle-btn.active {
+        .teamwork_toggle {
+            background-color: #28a745; // red color
+        }
+        .teamwork_pin {
+            transform: translateX(0);
+        }
+    }
+
+    .teamwork_toggle-text {
+        color: $purple;
+        font: $font-weight-normal 16px/40px $font-family-text;
+    }
+
+
+    .teamwork_access {
+        span {
+            display: flex;
+            align-items: center;
+        }
+    }
+
+    .teamwork_btns {
+        display: flex;
+        button {
+            margin-right: 10px;
+        }
+    }
+
+    .teamwork_teams {
+        flex-grow: 1;
+        max-height: 92%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin-top: 20px;
+        padding: 20px 30px;
+        border: 1px solid #959595;
+        display: grid;
+        grid-gap: 30px;
+        grid-template-columns: repeat(4, auto);
+    }
+
+    .teamwork_team {
+        display: flex;
+        flex-direction: column;
+        height: 300px;
+        max-width: 300px;
+        border: 1px solid #a1a1a1;
+        border-radius: 5px;
+        padding: 10px;
+        background-color: #ebebeb;
+    }
+
+    .teamwork_team-close {
+        cursor: pointer;
+        position: absolute;
+        right: -25px;
+        top: -25px;
+        width: 30px;
+        height: 30px;
+        transition: .5s;
+        border: 1px solid $purple;
+        border-radius: 50%;
+        background-color: #fff;
+        &:hover {
+            transform: rotate(180deg);
+        }
+    }
+
+    .teamwork_team-close::before,
+    .teamwork_team-close::after {
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        bottom: 0;
+        margin: auto;
+        content: ' ';
+        height: 20px;
+        width: 2px;
+        background-color: #441e84;
+    }
+    .teamwork_team-close::before {
+        transform: rotate(45deg);
+    }
+    .teamwork_team-close::after {
+        transform: rotate(-45deg);
+    }
+
+    .teamwork__team-header {
+        position: relative;
+        display: flex;
+        flex-shrink: 0;
+    }
+
+    .teamwork_team-head {
+        background-color: #fff;
+        margin-right: auto;
+        border-radius: 5px;
+        margin-left: auto;
+        flex-shrink: 0;
+        display: contents;
+        flex-grow: 1;
+        input {
+            font: $font-weight-normal 16px/27px $font-family-text;
+            background-color: #fff;
+            border-radius: 5px;
+            border: none;
+            text-align: center;
+            width: 100%;
+        }
+    }
+
+    .teamwork_team-inner {
+        display: flex;
+        flex-grow: 1;
+        flex-direction: column;
+        margin-top: 5px;
+        padding-top: 10px;
+        border-radius: 5px;
+        background-color: #fff;
+        overflow-y: auto;
+    }
+    .add_team {
+        cursor: pointer;
+        position: absolute;
+        display: flex;
+        bottom: 30px;
+        right: 30px;
+        background-color: $purple;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        box-shadow: 0 2px 6px #939393;
+        box-sizing: content-box;
+        transition: .2s;
+        &:hover {
+            box-shadow: 0 0 0 4px #a080d5;
+        }
+    }
+
+    .add_team::after,
+    .add_team::before {
+        content: '';
+        margin: auto;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        position: absolute;
+        background-color: #fff;
+        border-radius: 1px;
+        width: 2px;
+        height: 60%;
+    }
+    .add_team::before {
+        transform: rotate(90deg);
+    }
+
+    .visuallyhidden {
+        position: absolute;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        height: 1px;
+        width: 1px;
+        margin: -1px;
+        padding: 0;
+        border: 0;
+        transition: .3s;
+    }
+
+}
+
+[dir="rtl"] .teamwork {
+    .teamwork_toggle-btn.active {
+        .teamwork_pin {
+            transform: translateX(0);
+        }
+    }
+    .teamwork_toggle {
+        .teamwork_pin {
+            transform: translateX(-8px);
+        }
+    }
+}

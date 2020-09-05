@@ -1,0 +1,37 @@
+ <form action="#" class="student-setting-form">
+     <label class="input-label" for="teamnumbers">
+         <p class="input-description">
+             {{#str}}teamnumbers, local_teamwork{{/str}}
+         </p>
+         <input type="text" name="team-numbers" id="teamnumbers" class="student-setting-popup_input" value="{{teamnumbers}}" placeholder="10">
+     </label>
+     <label class="input-label" for="teamusernumbers">
+         <p class="input-description">
+             {{#str}} teamusernumbers, local_teamwork{{/str}}
+         </p>
+         <input type="text" name="team-user-numbers" id="teamusernumbers" class="student-setting-popup_input" value="{{teamusernumbers}}" placeholder="3">
+     </label>
+     <label class="input-label" for="teamuserenddate">
+         <p class="input-description">
+             {{#str}} teamuserenddate, local_teamwork{{/str}}<input type="checkbox" name="teamuserallowenddate" id="teamuserallowenddate" value="{{userenddateallowvalue}}" {{userenddateallowchecked}}>
+         </p>
+         <p class="teamuserenddate-inputs-wrapper">
+            <input type="number" name="team-userend-minute" class="student-setting-popup_input-date" min="0" max="59"
+                placeholder="01" value="{{endmin}}" {{userenddatedisabled}}>
+            <span>:</span>
+            <input type="number" name="team-userend-hour" class="student-setting-popup_input-date" min="0" max="23"
+                placeholder="01" value="{{endhour}}" {{userenddatedisabled}}>
+            <input type="number" name="team-userend-year" class="student-setting-popup_input-date" min="2018" max="2020"
+                placeholder="2018" value="{{endyear}}" {{userenddatedisabled}}>
+            <select name="team-userend-month" value="{{endmonth}}" {{userenddatedisabled}}>
+                {{#monthselect}}
+                    <option value="{{mnum}}" {{#selected}}selected="{{selected}}"{{/selected}}>{{mname}}</option>
+                {{/monthselect}}
+            </select>
+            <input type="number" name="team-userend-date" class="student-setting-popup_input-date" min="1" max="31"
+                placeholder="1" value="{{endday}}" {{userenddatedisabled}}>
+        </p>
+     </label>
+     <input type="submit" value=" {{#str}}save, local_teamwork{{/str}}" data-handler="get_popup_data" class="btn btn-primary">
+
+ </form>

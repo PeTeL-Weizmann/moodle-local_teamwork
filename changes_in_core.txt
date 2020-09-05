@@ -1,0 +1,10 @@
+Changes in core:
+
+1) Define 'local_teamwork/rubric_export' in mod\assign\amd\src\grading_panel.js
+
+Add in mod\assign\amd\src\grading_panel.js line 302
+
+RubricExport.init(userid, function(){							
+	var url = $(location).attr('href');
+	$(location).attr('href', url);
+});

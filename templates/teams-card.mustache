@@ -1,0 +1,29 @@
+  {{#cards}}
+      <div data-team_id = "{{cardid}}" class = "teamwork_team">
+          <div class = "teamwork__team-header">
+            {{^ifedit}}
+                <div data-remove_team_id = "{{cardid}}" data-handler = "delete_teamcard" class = "teamwork_team-close"></div>
+            {{/ifedit}}
+            <label class = "teamwork_team-head">
+              <input
+                data-team_id = "{{cardid}}"
+                data-handler = "input_team_name"
+                type = "text" name = ""
+                value = "{{cardname}}" {{#ifedit}}disabled{{/ifedit}}
+                >
+            </label>
+          </div>
+          <div class = "teamwork_team-inner draggable" data-max_count = '100'>
+              {{#users}}
+                  <div data-student_id = "{{userid}}" class = "teamwork_student {{notdragclass}}">{{name}}</div>
+              {{/users}}
+          </div>
+      </div>
+  {{/cards}}
+
+  {{#allow_add_teams}}
+  <div
+    data-handler = "add_new_teamcard"
+    class = "add_team">
+  </div>
+  {{/allow_add_teams}}

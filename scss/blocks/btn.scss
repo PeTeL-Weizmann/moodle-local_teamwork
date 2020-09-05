@@ -1,0 +1,91 @@
+.teamwork {
+  .btn-primary {
+    cursor: pointer;
+    transition: .2s;
+  }
+
+  .btn {
+    cursor: pointer;
+    display: block;
+    color: #fff;
+    font: $font-weight-semibold 18px/35px $font-family-text;
+    padding: 0 10px;
+    border: 1px solid $purple;
+    background-color: $purple;
+    border-radius: 5px;
+    //margin-top: 6px;
+    transition: .2s;
+    &-error {
+      color: #dc3545;
+      border-color: #dc3545;
+      background-color: transparent;
+      background-image: none;
+    }
+    &:hover {
+      background-color: $hover_purple;
+      border-color: $hover_purple;
+    }
+    &-error:hover {
+      background-color: #dc3545;
+      border-color: #dc3545;
+      color: #fff;
+    }
+    &--inline {
+      display: inline-block;
+      font: $font-weight-normal 24px $font-family-text;
+      margin-left: 68px;
+      padding: 0px 15px;
+      padding-bottom: 4px;
+      margin-top: -9px;
+    }
+    &--left {
+      margin-top: 46px;
+      margin-left: auto;
+      font: $font-weight-normal 23px/32px $font-family-text;
+      margin-right: -14px;
+    }
+    &--gray {
+      font: $font-weight-normal 24px/40px $font-family-text;
+      margin-top: 25px;
+      padding: 0 50px;
+      background-color: #333333;
+      border-color: #333333;
+    }
+    &--white {
+      font: $font-weight-normal 24px/40px $font-family-text;
+      padding: 0 50px;
+      color: $purple;
+      border-color: $purple;
+      background-color: #fff;
+    }
+    &--white:hover {
+      background-color: $hover_purple;
+      color: #fff;
+      border-color: $hover_purple;
+    }
+  }
+
+  .btn-cancel {
+    border: 1px solid #646464;
+    background-color: #fff;
+    border-radius: 5px;
+    line-height: 35px;
+    color: #000;
+    margin-right: 10px;
+    &:hover {
+      background-color: $hover_purple;;
+      border-color: $hover_purple;
+    }
+  }
+
+  .btns-popup {
+    display: flex;
+    padding: 31px 14px;
+    padding-bottom: 9px;
+    justify-content: flex-end;
+    & .btn {
+      padding: 0 24px;
+      font-weight: $font-weight-normal;
+    }
+  }
+}

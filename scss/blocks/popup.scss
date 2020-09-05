@@ -1,0 +1,96 @@
+  .teamwork-modal {
+    position: fixed;
+    display: flex;
+    overflow: hidden;
+    flex-direction: column;
+    z-index: 10001;
+    width: 561px;
+    left: calc(50% - 280px);
+    top: 20vh;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 0 10px 0 #7b7b7b;
+    bottom: unset;
+    min-height: 30vh;
+    // max-height: 60vh;
+  }
+  .teamwork-modal-error {
+    background-color: #fff5f6;
+    align-items: center;
+    span {
+      color: #dc3545;
+      display: flex;
+      height: 24vh;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  .teamwork-modal-error-abs {
+    position: absolute;
+    width: 96%;
+    left: 2%;
+    right: 2%;
+    bottom: -10px;
+    z-index: 100;
+    text-align: center;
+    background-color: rgba(255, 230, 230, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    span {
+      color: #dc3545;
+    }
+  }
+
+  .teamwork-modal_inner {
+    // padding: 20px 40px 10px;
+    text-align: center;
+  }
+
+  .teamwork-modal_header {
+    display: flex;
+    padding: 0 12px;
+    font: $font-weight-normal 30px/50px $font-family-text;
+    background-color: $purple;
+    color: #fff;
+  }
+  .teamwork-modal_head {
+    margin: 0;
+    margin-right: auto;
+  }
+  .teamwork-modal_close  {
+    margin-left: auto;
+  }
+
+  .teamwork-modal_close {
+    cursor: pointer;
+    position: absolute;
+    right: 7px;
+    top: 9px;
+    width: 33px;
+    height: 33px;
+    transition: .5s;
+  }
+  .teamwork-modal_close:hover {
+    transform: rotate(180deg);
+  }
+  .teamwork-modal_close:before, .teamwork-modal_close:after {
+    position: absolute;
+    left: 15px;
+    content: ' ';
+    height: 32px;
+    width: 2px;
+    background-color: #fff;
+  }
+  .teamwork-modal_close:before {
+    transform: rotate(45deg);
+  }
+  .teamwork-modal_close:after {
+    transform: rotate(-45deg);
+  }
+  .warning_wrap {
+    height: 17vh;
+    padding-top: 70px;
+  }

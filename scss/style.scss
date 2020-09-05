@@ -1,0 +1,13 @@
+@import 'variables.scss';
+@import 'mixin.scss';
+@import 'allpages.scss';
+// blocks
+@import 'blocks/skin.scss';
+@import 'blocks/btn.scss';
+@import 'blocks/popup-disable.scss';
+@import 'blocks/popup.scss';
+@import 'blocks/teamwork.scss';
+@import 'blocks/dragula.scss';
+@import 'blocks/student-setting-popup';
+// always connect last
+@import 'blocks/custom-style.scss';

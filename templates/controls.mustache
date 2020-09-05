@@ -1,0 +1,28 @@
+{{#if_user_teacher}}
+    <button
+      data-handler = "teamwork_toggle"
+      class = "teamwork_toggle-btn {{#teamwork_enable}}active teamwork-btn-fixed{{/teamwork_enable}}"
+      >
+      <div class = "teamwork_toggle">
+        <span class = "teamwork_pin"></span>
+      </div>
+      <div class = "teamwork_toggle-text">{{#str}}availableteam, local_teamwork{{/str}}</div>
+    </button>
+
+    <button
+      data-handler = "access_to_student"
+      class = "teamwork_toggle-btn {{#students_button_status}}active{{/students_button_status}}"
+      >
+      <div class = "teamwork_toggle">
+        <span class = "teamwork_pin"></span>
+      </div>
+      <div class = "teamwork_toggle-text">{{#str}}choicebystudents, local_teamwork{{/str}}</div>
+    </button>
+
+    <button
+      data-handler = "random_popup"
+      class = "teamwork_toggle-btn teamwork_toggle-text"
+      >
+      {{#str}}randomgroups, local_teamwork{{/str}}
+    </button>
+{{/if_user_teacher}}

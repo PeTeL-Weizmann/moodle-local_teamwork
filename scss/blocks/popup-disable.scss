@@ -1,0 +1,18 @@
+.teamwork {
+
+  ul {
+    margin: 0;
+  }
+
+  li {
+    margin: 0;
+  }
+
+  .text {
+    font: $font-weight-normal 18px/22px $font-family-text;
+  }
+  .text-bold {
+    margin-top: 50px;
+    font: $font-weight-semibold 18px/22px $font-family-text;
+  }
+}

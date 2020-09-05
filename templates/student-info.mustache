@@ -1,0 +1,26 @@
+  {{#studentCard}}
+      <div data-team_id = "{{cardid}}" class = "teamwork_team">
+
+          <label style="margin-top:10px;">{{#str}}youbelongtoteam, local_teamwork{{/str}}</label>
+          <div class = "teamwork__team-header">
+            <label class = "teamwork_team-head">
+              <input
+                data-team_id = "{{cardid}}"
+                data-handler = "input_team_name"
+                type = "text" name = ""
+                value = "{{cardname}}" disabled
+                >
+            </label>
+          </div>
+
+          <label style="margin-top:10px;">{{#str}}studentsinteam, local_teamwork{{/str}}</label>
+          <div class = "teamwork_team" data-max_count = '100'>
+              {{#users}}
+                  <div data-student_id = "{{userid}}" class = "teamwork_student {{notdragclass}}">{{name}}</div>
+              {{/users}}
+          </div>
+
+          <label style="margin-top:10px;"></label>
+
+      </div>
+  {{/studentCard}}
