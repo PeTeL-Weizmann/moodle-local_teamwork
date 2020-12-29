@@ -493,7 +493,7 @@
     position: absolute;
     display: flex;
     bottom: 30px;
-    right: 30px;
+    left: 30px;
     background-color: #3f1c7a;
     border-radius: 50%;
     width: 50px;
@@ -518,6 +518,11 @@
     height: 60%; }
   .teamwork .add_team::before {
     transform: rotate(90deg); }
+  .teamwork .close_btn {
+    cursor: pointer;
+    position: absolute;
+    bottom: 30px;
+    right: 40px; }
   .teamwork .visuallyhidden {
     position: absolute;
     overflow: hidden;

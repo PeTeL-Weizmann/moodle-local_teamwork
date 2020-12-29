@@ -37,7 +37,8 @@ function xmldb_local_teamwork_upgrade($oldversion) {
     if ($oldversion < 2019070815) {
 
         // Rename tables for petel.
-        if ($dbman->table_exists('teamwork') && $dbman->table_exists('teamwork_groups') && $dbman->table_exists('teamwork_members')) {
+        if ($dbman->table_exists('teamwork') && $dbman->table_exists('teamwork_groups') &&
+                $dbman->table_exists('teamwork_members')) {
 
             $table = new xmldb_table('teamwork');
             $dbman->rename_table($table, 'local_teamwork');
@@ -53,6 +54,30 @@ function xmldb_local_teamwork_upgrade($oldversion) {
 
         // Teamwork savepoint reached.
         upgrade_plugin_savepoint(true, 2019070815, 'local', 'teamwork');
+    }
+
+    if ($oldversion < 2020060303) {
+
+        $activityenabled = $DB->get_records_sql("
+                  SELECT tw.*,cm.instance
+                  FROM {local_teamwork} tw
+                  INNER JOIN {course_modules} cm on (cm.id=tw.moduleid)
+                  WHERE tw.active = 1");
+        foreach ($activityenabled as $activity) {
+            $data = ['assignment' => $activity->instance, 'plugin' => 'teamwork', 'subtype' => 'assignsubmission',
+                    'name' => 'enabled'];
+            $teamworksubmission = $DB->get_record('assign_plugin_config', $data);
+
+            if (empty($teamworksubmission)) {
+                $data['value'] = 1;
+                $DB->insert_record('assign_plugin_config', $data);
+            } else if ($teamworksubmission->value == 0) {
+                $teamworksubmission->value = 1;
+                $DB->update_record_raw('assign_plugin_config', $teamworksubmission);
+            }
+        }
+        // Teamwork savepoint reached.
+        upgrade_plugin_savepoint(true, 2020060303, 'local', 'teamwork');
     }
 
     return true;

@@ -348,7 +348,7 @@ define([
                     }
 
                     // Close skin popup.
-                    if (target.classList.contains('skin_close')) {
+                    if (target.classList.contains('skin_close') || target.classList.contains('close_btn')) {
                         skin.remove();
                         return;
                     }

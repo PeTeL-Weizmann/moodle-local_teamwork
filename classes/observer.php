@@ -60,10 +60,13 @@ class observer {
             return false;
         }
 
-        // Clone user assigment rubrics.
-        clone_user_assignment_rubrics($event->relateduserid, $event->contextinstanceid, $members);
+        // Clone user assigment rubrics and guide.
+        clone_user_assignment_fillings($event->relateduserid, $event->contextinstanceid, $members);
 
         list ($course, $cm) = get_course_and_cm_from_cmid($event->contextinstanceid, 'assign');
+        if (!\local_teamwork\common::is_submission_enable($cm->instance)) {
+            return false;
+        }
         $context = \context_module::instance($cm->id);
 
         $sql = 'SELECT * FROM {assign_grades} WHERE userid = ? AND assignment = ? ORDER BY id DESC LIMIT 1';
@@ -295,10 +298,16 @@ class observer {
         }
 
         $cm = $DB->get_record('course_modules', array('id' => $event->contextinstanceid));
+        if (!\local_teamwork\common::is_submission_enable($cm->instance)) {
+            return false;
+        }
         foreach ($members as $member) {
             $DB->set_field('assign_submission', 'status', 'submitted',
                     array('userid' => $member->userid, 'assignment' => $cm->instance));
         }
+
+        // Update onlinetext.
+        self::update_onlinetext($event, $members);
 
         return true;
     }
@@ -319,12 +328,17 @@ class observer {
         }
 
         $cm = $DB->get_record('course_modules', array('id' => $event->contextinstanceid));
-        $rowexample = $DB->get_record('assign_submission', array('assignment' => $cm->instance, 'userid' => $event->relateduserid));
+        if (!\local_teamwork\common::is_submission_enable($cm->instance)) {
+            return false;
+        }
 
         foreach ($members as $member) {
             $DB->set_field('assign_submission', 'status', 'submitted',
                     array('userid' => $member->userid, 'assignment' => $cm->instance));
         }
+
+        // Update onlinetext.
+        self::update_onlinetext($event, $members);
 
         return true;
     }
@@ -352,6 +366,9 @@ class observer {
 
         // SG - get Assign object for this cm.
         list ($course, $cm) = get_course_and_cm_from_cmid($event->contextinstanceid, 'assign');
+        if (!\local_teamwork\common::is_submission_enable($cm->instance)) {
+            return false;
+        }
         $context = \context_module::instance($cm->id);
         $assign = new \assign($context, $cm, $course);
 
@@ -381,13 +398,13 @@ class observer {
 
         $lt = $DB->get_record('local_teamwork', array('moduleid' => $event->contextinstanceid));
 
-        if(!empty($lt)){
+        if (!empty($lt)) {
             $DB->delete_records('local_teamwork', array('id' => $lt->id));
 
             $ltg = $DB->get_records('local_teamwork_groups', array('teamworkid' => $lt->id));
             $DB->delete_records('local_teamwork_groups', array('teamworkid' => $lt->id));
 
-            foreach($ltg as $item){
+            foreach ($ltg as $item) {
                 $DB->delete_records('local_teamwork_members', array('teamworkgroupid' => $item->id));
             }
         }
@@ -395,7 +412,105 @@ class observer {
         return true;
     }
 
-    // Function help.
+    /**
+     * @param \assignsubmission_comments\event\comment_created $event
+     * @return bool
+     * @throws \dml_exception
+     */
+    public static function comment_created(\assignsubmission_comments\event\comment_created $event): bool {
+        global $DB;
+
+        $submission = $DB->get_record('assign_submission', ['id'=>$event->other['itemid']]);
+        $currentuserid = $submission->userid;
+
+        // Check if local on.
+        $members = get_mod_events_members($event->contextinstanceid, $currentuserid, 'assign');
+        if (empty($members)) {
+            // Team leader user was not found.
+            // Problem? grade given to a user which is not leading (submitted) the team.
+            return false;
+        }
+
+        list ($course, $cm) = get_course_and_cm_from_cmid($event->contextinstanceid, 'assign');
+        if (!\local_teamwork\common::is_submission_enable($cm->instance)) {
+            return false;
+        }
+        $context = \context_module::instance($cm->id);
+        $assign = new \assign($context, $cm, $course);
+
+        $cuurentcomment = $DB->get_record('comments', ['id' => $event->objectid]);
+        unset($cuurentcomment->id);
+        unset($cuurentcomment->itemid);
+
+        foreach ($members as $i => $member) {
+            if ($currentuserid ==  $member->userid){
+                continue;
+            }
+            $obj = $assign->get_user_submission($member->userid, true);
+            $cuurentcomment->itemid=$obj->id;
+            $DB->insert_record('comments',$cuurentcomment);
+        }
+        return true;
+    }
+
+
+    /**
+     * @param \assignsubmission_comments\event\comment_deleted $event
+     * @return bool
+     * @throws \dml_exception
+     */
+    public static function comment_deleted(\assignsubmission_comments\event\comment_deleted $event): bool {
+        global $DB;
+
+        $submission = $DB->get_record('assign_submission', ['id'=>$event->other['itemid']]);
+        $currentuserid = $submission->userid;
+
+        // Check if local on.
+        $members = get_mod_events_members($event->contextinstanceid, $currentuserid, 'assign');
+        if (empty($members)) {
+            // Team leader user was not found.
+            // Problem? grade given to a user which is not leading (submitted) the team.
+            return false;
+        }
+
+        list ($course, $cm) = get_course_and_cm_from_cmid($event->contextinstanceid, 'assign');
+        if (!\local_teamwork\common::is_submission_enable($cm->instance)) {
+            return false;
+        }
+        $context = \context_module::instance($cm->id);
+        $assign = new \assign($context, $cm, $course);
+
+        $data = array(
+                'contextid' => $event->contextid,
+                'component' => 'assignsubmission_comments',
+                'commentarea' => 'submission_comments',
+                'itemid' => $event->other['itemid']
+        );
+
+        $cuurentcomments = $DB->get_records('comments', $data);
+
+        foreach ($members as $i => $member) {
+            if ($currentuserid ==  $member->userid){
+                continue;
+            }
+            $obj = $assign->get_user_submission($member->userid, true);
+            $todelete = array(
+                    'contextid' => $event->contextid,
+                    'component' => 'assignsubmission_comments',
+                    'commentarea' => 'submission_comments',
+                    'itemid' => $obj->id
+            );
+            $DB->delete_records('comments',$todelete);
+            foreach($cuurentcomments as $comment){
+                unset($comment->id);
+                unset($comment->itemid);
+                $comment->itemid=$obj->id;
+                $DB->insert_record('comments',$comment);
+            }
+        }
+        return true;
+    }
+
 
     public static function copy_files_to_member_assignfeedback($event, $pathnamehashes, $memberid): bool {
         global $DB;
@@ -636,5 +751,47 @@ class observer {
 
         return true;
 
+    }
+
+    public static function update_onlinetext($event, $members): bool {
+        global $DB;
+
+        $cm = $DB->get_record('course_modules', array('id' => $event->contextinstanceid));
+        $submission = $DB->get_record('assign_submission', array('assignment' => $cm->instance, 'userid' => $event->relateduserid));
+
+        $onlinetext = $DB->get_record('assignsubmission_onlinetext', array(
+                        'assignment' => $cm->instance,
+                        'submission' => $submission->id
+                )
+        );
+
+        if(!empty($onlinetext)) {
+            foreach ($members as $member) {
+                $membersubmission = $DB->get_record('assign_submission', array(
+                                'assignment' => $cm->instance,
+                                'userid' => $member->userid
+                        )
+                );
+
+                $memberonlinetext = $DB->get_record('assignsubmission_onlinetext', array(
+                                'assignment' => $cm->instance,
+                                'submission' => $membersubmission->id
+                        )
+                );
+
+                if(empty($memberonlinetext)){
+                    $DB->insert_record('assignsubmission_onlinetext', array(
+                            'assignment' => $cm->instance,
+                            'submission' => $membersubmission->id,
+                            'onlinetext' => $onlinetext->onlinetext
+                    ));
+                }else{
+                    $memberonlinetext->onlinetext = $onlinetext->onlinetext;
+                    $DB->update_record('assignsubmission_onlinetext', $memberonlinetext);
+                }
+            }
+        }
+
+        return true;
     }
 }

@@ -26,9 +26,8 @@ define([
         'core/str',
         'core/ajax',
         'core/notification',
-        'local_teamwork/html2pdf_bundle',
     ],
-    function ($, Str, Ajax, Notification, html2pdf) {
+    function ($, Str, Ajax, Notification) {
 
         return {
             selector: {
@@ -54,14 +53,19 @@ define([
 
                 var assignid = queryDict.id;
 
+                var rubricsave_notice = '';
+                Str.get_string('rubricsave_notice', 'local_teamwork').done(function(translation) {
+                    rubricsave_notice = translation;
+                });
                 var button_name = '';
-                Str.get_string('rubricsave', 'local_teamwork').done(function(linkedcourses) {
-                    button_name = linkedcourses;
+                Str.get_string('rubricsave', 'local_teamwork').done(function(translation) {
+                    button_name = translation;
                 });
 
                 var self = this;
                 this.waitForElement(this.selector.wrapper, function () {
-                    $('<a id="save-rubrics" class="btn btn-primary mt-10" style="color:white;font-weight: bold;">'+button_name+'</a>').insertAfter(self.selector.wrapper);
+                    $('<span></span><a id="save-rubrics" class="btn btn-primary mt-10" style="color:white;font-weight: bold;">' +
+                        button_name + '</a>' + rubricsave_notice + '</span>').insertAfter(self.selector.wrapper);
 
                     var root = $(self.selector.button);
                     root.on('click', function (e) {
@@ -71,35 +75,37 @@ define([
                         var element = window.document.getElementsByClassName("gradingform_rubric")[0];
 
                         // Generate the PDF.
+                        self.loadingPage();
+                        require(['local_teamwork/html2pdf_bundle'], function(html2pdf) {
 
-                        // html2pdf().from(element).set({
-                        //     margin: 1,
-                        //     filename: 'test.pdf',
-                        //     html2canvas: { scale: 2 },
-                        //     jsPDF: {orientation: 'portrait', unit: 'in', format: 'letter', compressPDF: true}
-                        // }).save();
+                            // html2pdf().from(element).set({
+                            //     margin: 1,
+                            //     filename: 'test.pdf',
+                            //     html2canvas: { scale: 2 },
+                            //     jsPDF: {orientation: 'portrait', unit: 'in', format: 'letter', compressPDF: true}
+                            // }).save();
 
-                        html2pdf().from(element).set({
-                            margin: 1,
-                            filename: 'test.pdf',
-                            html2canvas: {scale: 2},
-                            jsPDF: {orientation: 'portrait', unit: 'in', format: 'letter', compressPDF: true}
-                        }).outputPdf().then(function (pdf) {
+                            html2pdf().from(element).set({
+                                margin: 1,
+                                filename: 'test.pdf',
+                                html2canvas: {scale: 2},
+                                jsPDF: {orientation: 'portrait', unit: 'in', format: 'letter', compressPDF: true}
+                            }).outputPdf().then(function (pdf) {
 
-                            Ajax.call([{
-                                methodname: 'local_teamwork_save_rubrics_pdf',
-                                args: {
-                                    assignid: Number(assignid),
-                                    userid: Number(userid),
-                                    content: btoa(pdf)
-                                },
-                                done: function () {
-                                    callback();
-                                },
-                                fail: Notification.exception
-                            }]);
+                                Ajax.call([{
+                                    methodname: 'local_teamwork_save_rubrics_pdf',
+                                    args: {
+                                        assignid: Number(assignid),
+                                        userid: Number(userid),
+                                        content: btoa(pdf)
+                                    },
+                                    done: function () {
+                                        callback();
+                                    },
+                                    fail: Notification.exception
+                                }]);
+                            });
                         });
-
 
                     });
                 });
@@ -114,6 +120,20 @@ define([
                         self.waitForElement(elementPath, callBack);
                     }
                 }, 500);
+            },
+
+            loadingPage: function () {
+                var shadowStyle="display: flex; position: fixed; z-index: 99999; top: 0; bottom: 0; right: 0; left: 0; background: #0000006b;"
+                var spinnerStyle = "margin: auto;" +
+                    "width: 6rem;" +
+                    "height: 6rem;" +
+                    "border: .6em solid #fff;" +
+                    "border-right-color: transparent;" +
+                    "border-radius: 50%;" +
+                    "animation: spinner-border .75s linear infinite;";
+                var spinner = '<div class = "spinner" style = "'+ spinnerStyle +'"></div>';
+                var shadow = $('<div class = "loading" style="'+ shadowStyle +'">'+ spinner +'</div>');
+                $('body').append(shadow);
             }
         };
     });

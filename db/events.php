@@ -35,11 +35,16 @@ $observers = array(
                 'callback' => '\local_teamwork\observer::update_team_members_grades',
                 'schedule' => 'instant',
         ),
-        array(
-                'eventname' => '\assignsubmission_onlinetext\event\submission_updated',
-                'callback' => '\local_teamwork\observer::update_team_memebers_submision_status_updated',
-                'schedule' => 'instant',
-        ),
+        //array(
+        //        'eventname' => '\assignsubmission_onlinetext\event\submission_updated',
+        //        'callback' => '\local_teamwork\observer::update_team_memebers_submision_onlinetext',
+        //        'schedule' => 'instant',
+        //),
+        //array(
+        //        'eventname' => '\assignsubmission_onlinetext\event\submission_created',
+        //        'callback' => '\local_teamwork\observer::create_team_memebers_submision_onlinetext',
+        //        'schedule' => 'instant',
+        //),
         array(
                 'eventname' => '\assignsubmission_file\event\submission_updated',
                 'callback' => '\local_teamwork\observer::update_team_memebers_submision_status_updated',
@@ -60,4 +65,14 @@ $observers = array(
                 'callback' => '\local_teamwork\observer::course_module_deleted',
                 'schedule' => 'instant',
         ),
+        array(
+                'eventname' => '\assignsubmission_comments\event\comment_created',
+                'callback' => '\local_teamwork\observer::comment_created',
+                'schedule' => 'instant',
+        ),
+        array(
+                'eventname' => '\assignsubmission_comments\event\comment_deleted',
+                'callback' => '\local_teamwork\observer::comment_deleted',
+                'schedule' => 'instant',
+        )
 );

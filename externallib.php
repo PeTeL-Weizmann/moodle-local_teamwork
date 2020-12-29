@@ -83,9 +83,22 @@ class local_teamwork_external extends external_api {
 
         $isateacher = if_user_teacher_on_course($courseid);
         $teamwork = $DB->get_record('local_teamwork', array('moduleid' => $activityid, 'type' => get_module_name($activityid)));
-        if ($isateacher || (if_user_student_on_course($courseid) && if_access_to_student($activityid))) {
+
+        // Default value of select.
+        $groups = view_groups_select($courseid);
+
+        // PTL 3921
+        //if(!empty($groups) && isset($groups[0])){
+        //    $selectgroupid = array($groups[0]->id);
+        //}else{
+        //    $selectgroupid = array(0);
+        //}
+
+        $selectgroupid = json_decode($selectgroupid);
+
+        if ($isateacher || (if_user_student_on_course($courseid) && if_access_to_student($activityid) && if_teamwork_enable($activityid))) {
             $block .= html_writer::tag('button', get_string('open_local', 'local_teamwork'),
-                    array('id' => 'open_local', 'class' => 'btn btn-primary'));
+                    array('id' => 'open_local', 'class' => 'btn btn-primary m-4'));
             if (!$isateacher && $teamwork->teamuserallowenddate) {
                 $block .= '<style>.singlebutton{display:none;}</style>';
             }
@@ -96,7 +109,7 @@ class local_teamwork_external extends external_api {
                         ['class' => 'teawmworkenddatemessage']);
             }
 
-            if (!empty($groups) && if_teamwork_enable($activityid)) {
+            if (!empty($groups) && if_teamwork_enable($activityid) && $isateacher) {
                 $data = array();
                 foreach ($groups as $group) {
                     $tmp['teacherinfo_title'] = get_string('forgroup', 'local_teamwork') . $group->name;
@@ -107,7 +120,7 @@ class local_teamwork_external extends external_api {
             }
         }
         // Get information for student.
-        if (if_user_student_on_course($courseid) && if_teamwork_enable($activityid)) {
+        if (if_user_student_on_course($courseid)) {
             $datastudent = return_data_for_student_tohtml($activityid, $moduletype, $courseid, $selectgroupid);
             $block .= $OUTPUT->render_from_template('local_teamwork/student-info', array('studentCard' => $datastudent));
         }

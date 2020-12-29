@@ -320,7 +320,7 @@
         position: absolute;
         display: flex;
         bottom: 30px;
-        right: 30px;
+        left: 30px;
         background-color: $purple;
         border-radius: 50%;
         width: 50px;
@@ -349,6 +349,13 @@
     }
     .add_team::before {
         transform: rotate(90deg);
+    }
+
+    .close_btn {
+        cursor: pointer;
+        position: absolute;
+        bottom: 30px;
+        right: 40px;
     }
 
     .visuallyhidden {

@@ -245,19 +245,22 @@ function view_groups_select($courseid) {
 
     $groupallstudents = get_groups_course($courseid);
 
-    if (empty($groupallstudents) || if_user_teacher_on_course($courseid)) {
+    if (if_user_teacher_on_course($courseid)) {
         $obj = new stdClass();
         $obj->id = 0;
         $obj->courseid = $courseid;
         $obj->name = get_string('allstudents', 'local_teamwork');
 
-        array_unshift($groupallstudents, $obj); // SG - put All students on the first place in select.
+        array_unshift($groupallstudents, $obj);
+
+        return $groupallstudents;
     }
 
     // If student.
     if (if_user_student_on_course($courseid)) {
         $newgroupallstudents = array();
 
+        // If student in group.
         foreach ($groupallstudents as $group) {
             $students = get_students_by_group($group->id, $courseid);
 
@@ -274,10 +277,18 @@ function view_groups_select($courseid) {
             }
         }
 
-        $groupallstudents = $newgroupallstudents;
-    }
+        // If seudent not in group.
+        if(empty($newgroupallstudents)){
+            $obj = new stdClass();
+            $obj->id = 0;
+            $obj->courseid = $courseid;
+            $obj->name = get_string('allstudents', 'local_teamwork');
 
-    return $groupallstudents;
+            array_unshift($newgroupallstudents, $obj);
+        }
+
+        return $newgroupallstudents;
+    }
 }
 
 // Get student users of course.
@@ -562,7 +573,7 @@ function add_comments_to_assign($comment) {
  *
  * @return void
  */
-function clone_user_assignment_rubrics($userid, $instanceid, $targetusers) {
+function clone_user_assignment_fillings($userid, $instanceid, $targetusers) {
     global $DB;
     $assign = $DB->get_record('course_modules', ['id' => $instanceid]);
     // Actual item id.
@@ -585,8 +596,10 @@ function clone_user_assignment_rubrics($userid, $instanceid, $targetusers) {
         // Delete old fillings.
         $oldinstancesforitem = $DB->get_records('grading_instances', ['itemid' => $oldassigngrade->id]);
         foreach ($oldinstancesforitem as $oldinstanceforitem) {
+            $DB->delete_records('gradingform_guide_fillings', ['instanceid' => $oldinstanceforitem->id]);
             $DB->delete_records('gradingform_rubric_fillings', ['instanceid' => $oldinstanceforitem->id]);
         }
+
         // Delete old instances.
         $DB->delete_records('grading_instances', ['itemid' => $oldassigngrade->id]);
         $temp = clone $actualgradinginstance;
@@ -595,9 +608,17 @@ function clone_user_assignment_rubrics($userid, $instanceid, $targetusers) {
         $temp->feedback = $targetuser->userid;
         $DB->insert_record('grading_instances', $temp);
         $gradinginstance = $DB->get_record('grading_instances', ['itemid' => $oldassigngrade->id, 'status' => 1]);
+
+        // Guide.
+        $actualfillings = $DB->get_records('gradingform_guide_fillings', ['instanceid' => $actualgradinginstance->id]);
+        if (!empty($actualfillings)) {
+            clone_fillings($actualfillings, $gradinginstance->id, 'gradingform_guide_fillings');
+        }
+
+        // Rubric.
         $actualfillings = $DB->get_records('gradingform_rubric_fillings', ['instanceid' => $actualgradinginstance->id]);
         if (!empty($actualfillings)) {
-            clone_fillings($actualfillings, $gradinginstance->id);
+            clone_fillings($actualfillings, $gradinginstance->id, 'gradingform_rubric_fillings');
         }
     }
 }
@@ -676,14 +697,14 @@ function update_user_final_grades($event, $members) {
  *
  * @return void
  */
-function clone_fillings($actualfillings, $gradinginstanceid) {
+function clone_fillings($actualfillings, $gradinginstanceid, $tablename = 'gradingform_rubric_fillings') {
     global $DB;
 
     foreach ($actualfillings as $newfilling) {
         $temp = clone $newfilling;
         $temp->instanceid = $gradinginstanceid;
         unset($temp->id);
-        $DB->insert_record('gradingform_rubric_fillings', $temp);
+        $DB->insert_record($tablename, $temp);
     }
 }
 

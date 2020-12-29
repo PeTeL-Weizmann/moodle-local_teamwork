@@ -38,6 +38,10 @@ function local_teamwork_extend_navigation() {
     $courseid = $PAGE->context->get_course_context()->instanceid;
     $activityid = $PAGE->context->instanceid;
 
+    if (!\local_teamwork\common::is_submission_enable($PAGE->cm->instance)) {
+        return;
+    }
+
     // Check if groups submittions is enabled.
     $assign = $DB->get_record('assign', array('id' => $PAGE->cm->instance));
     if (empty($assign) || $assign->teamsubmission == 1) {
@@ -61,26 +65,4 @@ function local_teamwork_extend_navigation() {
     ));
 
     return;
-}
-
-/**
- * function to get relevantt team by user
- *
- * @param int $instance instance id of assign
- * @param int $userid User id
- */
-function local_teamwork_get_user_team($instance, $userid) {
-    global $CFG, $DB;
-    $sql = "
-                SELECT tg.name
-                FROM {local_teamwork_members} as tm
-                LEFT JOIN {local_teamwork_groups} as tg ON (tg.id=tm.teamworkgroupid)
-                INNER JOIN {local_teamwork} as t ON (t.id=tg.teamworkid)
-                WHERE t.moduleid = ? and tm.userid =? 
-            ";
-    $team = $DB->get_record_sql($sql, array($instance, $userid));
-    if (!empty($team->name)) {
-        return $team->name;
-    }
-    return '';
 }
