@@ -4,10 +4,12 @@ A Moodle plugin that enables a teacher to team up students for each assignment i
 Filter Team Work for assignment submission
 ============
 
+Version 3.7 (2022080813), release 2 - 2023.09.02
 Version 3.6, release 1 - 2019.03.13
 
 Change Log
 ----------
+* Version 3.7 (2022080813), release 2 - 2023.09.02 - Moodle 4.1 version
 * 3.6, release 1    2019.03.13
 
 Purpose
