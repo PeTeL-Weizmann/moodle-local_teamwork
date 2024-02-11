@@ -23,8 +23,6 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
 function xmldb_local_teamwork_install() {
     global $DB;
     $dbman = $DB->get_manager();
@@ -56,6 +54,7 @@ function xmldb_local_teamwork_install() {
         $table->add_field('teamusernumbers', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
         $table->add_field('teamuserallowenddate', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0');
         $table->add_field('teamuserenddate', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('counter', XMLDB_TYPE_INTEGER, '5', null, null, null, 0);
         $table->add_field('active', XMLDB_TYPE_INTEGER, '2', null, null, null, null);
         $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '20', null, null, null, null);
         $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '20', null, null, null, null);

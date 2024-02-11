@@ -23,7 +23,7 @@ define(['core/str'], function (str) {
             popup.innerHTML = `
             <div class = "teamwork-modal_header">
                 <p class = "teamwork-modal_head">${this.textHead}</p>
-                <span class = "teamwork-modal_close"></span>
+                <button class = "teamwork-modal_close" type="button" aria-label=""></button>
             </div>
             <div class = "teamwork-modal_inner"></div>
             `;
@@ -67,6 +67,6 @@ define(['core/str'], function (str) {
 
     };
 
-    return popup
+    return popup;
 
 });

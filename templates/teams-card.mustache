@@ -1,30 +1,50 @@
-  {{#cards}}
-      <div data-team_id = "{{cardid}}" class = "teamwork_team">
-          <div class = "teamwork__team-header">
-            {{^ifedit}}
-                <div data-remove_team_id = "{{cardid}}" data-handler = "delete_teamcard" class = "teamwork_team-close"></div>
-            {{/ifedit}}
-            <label class = "teamwork_team-head">
-              <input
-                data-team_id = "{{cardid}}"
-                data-handler = "input_team_name"
-                type = "text" name = ""
-                value = "{{cardname}}" {{#ifedit}}disabled{{/ifedit}}
-                >
-            </label>
-          </div>
-          <div class = "teamwork_team-inner draggable" data-max_count = '100'>
-              {{#users}}
-                  <div data-student_id = "{{userid}}" class = "teamwork_student {{notdragclass}}">{{name}}</div>
-              {{/users}}
-          </div>
-      </div>
-  {{/cards}}
-
-  {{#allow_add_teams}}
-  <div
-    data-handler = "add_new_teamcard"
-    class = "add_team">
+{{#cards}}
+<div data-team_id="{{cardid}}" class="teamwork_team">
+  <div class="teamwork__team-header">
+    {{^ifedit}}
+    <button data-remove_team_id="{{cardid}}"
+          data-handler="delete_teamcard"
+          class="teamwork_team-close"
+          type="button"
+          tabindex="0"
+          aria-label="{{#str}}delete_teamcard, local_teamwork, {{cardname}} {{/str}}">
+      </button>
+    {{/ifedit}}
+    <label class="teamwork_team-head position-relative">
+      <i class="fa fa-pencil-square-o position-absolute text-primary teamwork_team-head-editing-icon"
+        aria-hidden="true"></i>
+      <input data-team_id="{{cardid}}" data-handler="input_team_name" type="text" name="" value="{{cardname}}"
+        {{#ifedit}}disabled{{/ifedit}}>
+    </label>
   </div>
-  <button type="button" class="btn btn-primary close_btn">{{#str}}save, local_teamwork{{/str}}</button>
-  {{/allow_add_teams}}
+  <div class="teamwork_team-inner draggable" data-max_count='100'>
+    {{#users}}
+    <div data-student_id="{{userid}}" class="teamwork_student {{notdragclass}} position-relative">
+      <span>
+        {{name}}
+      </span>
+      {{^ifedit}}
+      <a class="p-1 position-absolute delete_user_submit-btn" data-handler="delete_user_submit" data-userid="{{userid}}"
+        data-teamid="{{cardid}}" href="javascript:void(0);">
+        <i class="fas fa-eraser" aria-hidden="true"></i>
+      </a>
+      {{/ifedit}}
+    </div>
+
+    
+    {{/users}}
+  </div>
+</div>
+{{/cards}}
+
+{{#allow_add_teams}}
+<button
+type="button"
+data-handler="add_new_teamcard"
+class="add_team"
+role="button"
+tabindex="0"
+aria-label="{{#str}}addnewteamcrad, local_teamwork{{/str}}">
+</button>
+<button type="button" class="btn btn-primary close_btn">{{#str}}save, local_teamwork{{/str}}</button>
+{{/allow_add_teams}}

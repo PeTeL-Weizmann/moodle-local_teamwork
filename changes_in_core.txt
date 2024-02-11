@@ -5,6 +5,6 @@ Changes in core:
 Add in mod\assign\amd\src\grading_panel.js line 302
 
 RubricExport.init(userid, function(){							
-	var url = $(location).attr('href');
-	$(location).attr('href', url);
+var url = $(location).attr('href');
+$(location).attr('href', url);
 });
