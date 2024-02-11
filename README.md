@@ -5,7 +5,6 @@ Filter Team Work for assignment submission
 ============
 
 Version 3.7 (2022080813), release 2 - 2023.09.02
-Version 3.6, release 1 - 2019.03.13
 
 Change Log
 ----------
