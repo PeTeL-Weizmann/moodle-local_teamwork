@@ -34,6 +34,9 @@ require_once($CFG->dirroot . '/local/teamwork/locallib.php');
  */
 class local_teamwork_external extends external_api {
 
+    const TEAMNUMBERS = 10;
+    const TEAMUSERNUMBERS = 3;
+
     // Render_block_html_page.
 
     /**
@@ -55,12 +58,18 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
+
     public static function render_block_html_page_returns() {
         return new external_single_structure(
                 array(
-                        'result' => new external_value(PARAM_RAW, 'result bool'),
+                        'html' => new external_value(PARAM_RAW, 'result string'),
+                        'paths' => new external_value(PARAM_RAW, 'result string'),
+                        'currentlangcode' => new external_value(PARAM_RAW, 'result string'),
+                        'tokens' => new external_value(PARAM_RAW, 'result string'),
+                        'schemes' => new external_value(PARAM_RAW, 'result string'),
+                        'voicecontrolenabled' => new external_value(PARAM_RAW, 'result string'),
                 )
         );
     }
@@ -70,8 +79,8 @@ class local_teamwork_external extends external_api {
      *
      * @param int $courseid
      * @param int $activityid
-     * @param text $moduletype
-     * @param text $selectgroupid
+     * @param string $moduletype
+     * @param string $selectgroupid
      * @return array
      */
     public static function render_block_html_page($courseid, $activityid, $moduletype, $selectgroupid) {
@@ -85,18 +94,12 @@ class local_teamwork_external extends external_api {
         $teamwork = $DB->get_record('local_teamwork', array('moduleid' => $activityid, 'type' => get_module_name($activityid)));
 
         // Default value of select.
-        $groups = view_groups_select($courseid);
-
-        // PTL 3921
-        //if(!empty($groups) && isset($groups[0])){
-        //    $selectgroupid = array($groups[0]->id);
-        //}else{
-        //    $selectgroupid = array(0);
-        //}
+        $groups = view_groups_select($courseid, $activityid);
 
         $selectgroupid = json_decode($selectgroupid);
 
-        if ($isateacher || (if_user_student_on_course($courseid) && if_access_to_student($activityid) && if_teamwork_enable($activityid))) {
+        if ($isateacher ||
+                (if_user_student_on_course($courseid) && if_access_to_student($activityid) && if_teamwork_enable($activityid))) {
             $block .= html_writer::tag('button', get_string('open_local', 'local_teamwork'),
                     array('id' => 'open_local', 'class' => 'btn btn-primary m-4'));
             if (!$isateacher && $teamwork->teamuserallowenddate) {
@@ -121,11 +124,54 @@ class local_teamwork_external extends external_api {
         }
         // Get information for student.
         if (if_user_student_on_course($courseid)) {
-            $datastudent = return_data_for_student_tohtml($activityid, $moduletype, $courseid, $selectgroupid);
+            $datastudent = return_data_for_student_tohtml($activityid, $moduletype, $courseid);
             $block .= $OUTPUT->render_from_template('local_teamwork/student-info', array('studentCard' => $datastudent));
         }
 
-        return array('result' => $block);
+        // Voice control.
+        $paths = [
+                (new moodle_url('/local/teamwork/media/ready.mp3'))->out(),
+                (new moodle_url('/local/teamwork/media/correct.mp3'))->out(),
+                (new moodle_url('/local/teamwork/media/timeout.mp3'))->out(),
+                (new moodle_url('/local/teamwork/media/please_repeat.m4a'))->out(),
+                (new moodle_url('/local/teamwork/media/sample.m4a'))->out(),
+        ];
+
+        $currentlangcode = local_teamwork_get_full_lang_code(current_language());
+
+        $langprefix = '_' . current_language();
+        $tokens = get_config('local_teamwork', 'voice_ok_tokens' . $langprefix);
+        $tokens = preg_split('/\r\n|\r|\n/', $tokens);
+
+        // Schemes.
+        $schemenames = [
+                'add_new_teamcard',
+                'add_new_named_teamcard',
+                'create_numbers_teamcard',
+                'drag_student_card',
+                'delete_teamcard',
+                'read_users',
+                'read_teams',
+                'sing_a_song',
+                '11',
+        ];
+        $schemes = [];
+        $schemeprefix = 'scheme_';
+        foreach ($schemenames as $key => $schemename) {
+            $name = $schemeprefix . $schemename . $langprefix;
+            $schemes[$schemename] = preg_split('/\r\n|\r|\n/', get_config('local_teamwork', $name));
+        }
+
+        $voicecontrolenabled = get_config('local_teamwork', 'voice_enabled');
+
+        return [
+                'html' => $block,
+                'paths' => json_encode($paths),
+                'currentlangcode' => $currentlangcode,
+                'tokens' => json_encode($tokens),
+                'schemes' => json_encode($schemes),
+                'voicecontrolenabled' => $voicecontrolenabled
+        ];
     }
 
 
@@ -150,7 +196,7 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
     public static function render_teamwork_html_returns() {
         return new external_single_structure(
@@ -165,12 +211,12 @@ class local_teamwork_external extends external_api {
      *
      * @param int $courseid
      * @param int $activityid
-     * @param text $moduletype
-     * @param text $selectgroupid
+     * @param string $moduletype
+     * @param string $selectgroupid
      * @return array
      */
     public static function render_teamwork_html($courseid, $activityid, $moduletype, $selectgroupid) {
-        global $OUTPUT, $USER;
+        global $OUTPUT, $USER, $CFG;
 
         $context = context_user::instance($USER->id);
         self::validate_context($context);
@@ -185,7 +231,8 @@ class local_teamwork_external extends external_api {
         $data['teamwork_enable'] = if_teamwork_enable($activityid);
         $data['students_button_status'] = students_button_status($activityid);
         $data['allow_add_teams'] = allow_add_teams($courseid, $activityid, $arrgroupid[0]);
-        $data['groups'] = view_groups_select($courseid);
+        $data['groups'] = view_groups_select($courseid, $activityid);
+        $data['if_present_groups'] = count($data['groups']) == 1 ? false : true;
 
         // Set default groups.
         foreach ($data['groups'] as $group) {
@@ -201,6 +248,13 @@ class local_teamwork_external extends external_api {
         $data['cards'] = get_cards($activityid, $moduletype, $courseid, $arrgroupid[0]);
         $data['if_user_teacher'] = if_user_teacher_on_course($courseid);
         $data['if_user_student'] = if_user_student_on_course($courseid);
+
+        $voicecontrol = '';
+        if (get_config('local_teamwork', 'voice_enabled')) {
+            require_once($CFG->dirroot . '/local/teamwork/locallib.php');
+            $voicecontrol = local_teamwork_voice_init();
+        }
+        $data['voicecontrol'] = $voicecontrol;
 
         $html = $OUTPUT->render_from_template('local_teamwork/main', $data);
 
@@ -231,7 +285,7 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
     public static function set_teamwork_enable_returns() {
         return new external_single_structure(
@@ -245,7 +299,7 @@ class local_teamwork_external extends external_api {
      * Add share task
      *
      * @param int $activityid
-     * @param text $moduletype
+     * @param string $moduletype
      * @return array
      */
     public static function set_teamwork_enable($activityid, $moduletype) {
@@ -272,7 +326,7 @@ class local_teamwork_external extends external_api {
             $dataobject->creatorid = $USER->id;
             $dataobject->moduleid = $activityid;
             $dataobject->type = $moduletype;
-            $dataobject->studentediting = 1;
+            $dataobject->studentediting = 0;
             $dataobject->active = 1;
             $dataobject->timecreated = time();
             $dataobject->timemodified = time();
@@ -301,7 +355,7 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
     public static function set_access_to_student_returns() {
         return new external_single_structure(
@@ -315,7 +369,7 @@ class local_teamwork_external extends external_api {
      * Add share task
      *
      * @param int $activityid
-     * @param text $moduletype
+     * @param string $moduletype
      * @return array
      */
     public static function set_access_to_student($activityid, $moduletype) {
@@ -326,6 +380,15 @@ class local_teamwork_external extends external_api {
 
         $teamwork = $DB->get_record('local_teamwork', array('moduleid' => $activityid, 'type' => $moduletype));
         if (!empty($teamwork)) {
+
+            if (empty($teamwork->teamnumbers)) {
+                $teamwork->teamnumbers = self::TEAMNUMBERS;
+            }
+
+            if (empty($teamwork->teamusernumbers)) {
+                $teamwork->teamusernumbers = self::TEAMUSERNUMBERS;
+            }
+
             switch ($teamwork->studentediting) {
                 case 0:
                     $teamwork->studentediting = 1;
@@ -356,6 +419,7 @@ class local_teamwork_external extends external_api {
                         'activityid' => new external_value(PARAM_INT, 'activity id int', VALUE_DEFAULT, null),
                         'moduletype' => new external_value(PARAM_RAW, 'moduletype text', VALUE_DEFAULT, null),
                         'selectgroupid' => new external_value(PARAM_RAW, 'selectgroupid text', VALUE_DEFAULT, null),
+                        'teamname' => new external_value(PARAM_TEXT, 'name', VALUE_DEFAULT, null),
                 )
         );
     }
@@ -363,7 +427,7 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
     public static function add_new_card_returns() {
         return new external_single_structure(
@@ -378,15 +442,15 @@ class local_teamwork_external extends external_api {
      *
      * @param int $courseid
      * @param int $activityid
-     * @param text $moduletype
-     * @param text $selectgroupid
+     * @param string $moduletype
+     * @param string $selectgroupid
      * @return array
      */
-    public static function add_new_card($courseid, $activityid, $moduletype, $selectgroupid) {
+    public static function add_new_card($courseid, $activityid, $moduletype, $selectgroupid, $name = null) {
 
         $arrgroupid = json_decode($selectgroupid);
         foreach ($arrgroupid as $id) {
-            $result = add_new_card($activityid, $moduletype, $id, array(), $courseid);
+            $result = add_new_card($activityid, $moduletype, $id, $courseid, $name);
         }
 
         return array('result' => json_encode($result));
@@ -410,7 +474,7 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
     public static function delete_card_returns() {
         return new external_single_structure(
@@ -451,7 +515,7 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
     public static function show_random_popup_returns() {
         return new external_single_structure(
@@ -507,7 +571,7 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
     public static function set_random_teams_returns() {
         return new external_single_structure(
@@ -522,8 +586,8 @@ class local_teamwork_external extends external_api {
      *
      * @param int $courseid
      * @param int $activityid
-     * @param text $moduletype
-     * @param text $selectgroupid
+     * @param string $moduletype
+     * @param string $selectgroupid
      * @return array
      */
     public static function set_random_teams($courseid, $activityid, $moduletype, $selectgroupid, $numberofstudent) {
@@ -550,7 +614,7 @@ class local_teamwork_external extends external_api {
             $chunk = array_chunk($students, $numberofstudent);
 
             foreach ($chunk as $item) {
-                add_new_card($activityid, $moduletype, $arrselectid[0], $item, $courseid);
+                add_new_card($activityid, $moduletype, $arrselectid[0], $courseid, null, $item);
             }
         }
 
@@ -576,7 +640,7 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
     public static function set_new_team_name_returns() {
         return new external_single_structure(
@@ -597,6 +661,10 @@ class local_teamwork_external extends external_api {
 
         $context = context_user::instance($USER->id);
         self::validate_context($context);
+
+        if (empty(trim($cardname))) {
+            return array('result' => json_encode(array()));
+        }
 
         $team = $DB->get_record('local_teamwork_groups', array('id' => $cardid));
         if (!empty($team)) {
@@ -626,7 +694,7 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
     public static function render_student_settings_popup_returns() {
         return new external_single_structure(
@@ -640,7 +708,7 @@ class local_teamwork_external extends external_api {
      * Add share task
      *
      * @param int $activityid
-     * @param text $moduletype
+     * @param string $moduletype
      * @return array
      */
     public static function render_student_settings_popup($activityid, $moduletype) {
@@ -727,7 +795,7 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
     public static function student_settings_popup_data_returns() {
         return new external_single_structure(
@@ -742,7 +810,7 @@ class local_teamwork_external extends external_api {
      *
      * @param int $courseid
      * @param int $activityid
-     * @param text $moduletype
+     * @param string $moduletype
      * @param int $teamnumbers
      * @param int $teamusernumbers
      * @param int $teamuserallowenddate
@@ -760,8 +828,8 @@ class local_teamwork_external extends external_api {
         $context = context_user::instance($USER->id);
         self::validate_context($context);
 
-        $teamnumbers = (empty($teamnumbers)) ? 10 : $teamnumbers;
-        $teamusernumbers = (empty($teamusernumbers)) ? 3 : $teamusernumbers;
+        $teamnumbers = (empty($teamnumbers)) ? self::TEAMNUMBERS : $teamnumbers;
+        $teamusernumbers = (empty($teamusernumbers)) ? self::TEAMUSERNUMBERS : $teamusernumbers;
 
         $teamuserenddatestring = $teamuserendyear . '-'
                 . $teamuserendmonth . '-'
@@ -791,10 +859,11 @@ class local_teamwork_external extends external_api {
             }
             $result = $DB->update_record('local_teamwork', $teamworkdata);
         } else {
+            // Send error to front.
             $answer = array('error' => 2, 'errormsg' => get_string(
                     'error_no_db_entry',
                     'local_teamwork')
-            ); // Send error to front.
+            );
         }
 
         return array('result' => json_encode($answer));
@@ -816,6 +885,7 @@ class local_teamwork_external extends external_api {
                         'selectgroupid' => new external_value(PARAM_RAW, 'selectgroupid text', VALUE_DEFAULT, null),
                         'newteamspost' => new external_value(PARAM_RAW, 'newteamspost text', VALUE_DEFAULT, null),
                         'draguserid' => new external_value(PARAM_INT, 'drag user id int', VALUE_DEFAULT, null),
+                        'removeteam' => new external_value(PARAM_BOOL, 'removeteam bool', VALUE_DEFAULT, false),
                 )
         );
     }
@@ -823,7 +893,7 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
     public static function drag_student_card_returns() {
         return new external_single_structure(
@@ -838,12 +908,13 @@ class local_teamwork_external extends external_api {
      *
      * @param int $courseid
      * @param int $activityid
-     * @param text $moduletype
-     * @param text $selectgroupid
+     * @param string $moduletype
+     * @param string $selectgroupid
      * @return array
      */
-    public static function drag_student_card($courseid, $activityid, $moduletype, $selectgroupid, $newteamspost, $draguserid) {
-        global $USER, $DB, $USER;
+    public static function drag_student_card($courseid, $activityid, $moduletype, $selectgroupid, $newteamspost, $draguserid,
+            $removeteam) {
+        global $DB, $USER;
 
         $context = context_user::instance($USER->id);
         self::validate_context($context);
@@ -864,7 +935,37 @@ class local_teamwork_external extends external_api {
             }
 
             if (!$flag) {
-                return json_encode(array('error' => 1, 'errormsg' => get_string('errordragdrop', 'local_teamwork')));
+                return json_encode(['error' => 1, 'errormsg' => get_string('errordragdrop', 'local_teamwork')]);
+            }
+        }
+
+        // If user dragged to user list.
+        $flag = true;
+        foreach ($newteams as $team) {
+            if (isset($team->studentid) && in_array($draguserid, $team->studentid)) {
+                $flag = false;
+            }
+        }
+
+        if ($flag) {
+            $teamid = 0;
+            $groups = $DB->get_records('local_teamwork_groups', ['teamworkid' => $teamwork->id]);
+            foreach ($groups as $group) {
+                $members = $DB->get_records('local_teamwork_members', ['teamworkgroupid' => $group->id], '', 'userid');
+                foreach ($members as $member) {
+                    if ($member->userid == $draguserid) {
+                        $teamid = $group->id;
+                    }
+                }
+            }
+
+            delete_user_submit($draguserid, $teamid, $activityid);
+
+            if ($removeteam) {
+                $users = $DB->get_records('local_teamwork_members', array('teamworkgroupid' => $teamid));
+                if (!$users) {
+                    $DB->delete_records('local_teamwork_groups', array('id' => $teamid));
+                }
             }
         }
 
@@ -918,8 +1019,8 @@ class local_teamwork_external extends external_api {
                         $DB->delete_records('local_teamwork_members', array('id' => $item->id));
                     }
                 }
-            } // If !empty team.
-        } // End foreach newteams/team.
+            }
+        }
 
         return array('result' => json_encode(array()));
     }
@@ -945,7 +1046,7 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
     public static function render_teams_card_returns() {
         return new external_single_structure(
@@ -960,8 +1061,8 @@ class local_teamwork_external extends external_api {
      *
      * @param int $courseid
      * @param int $activityid
-     * @param text $moduletype
-     * @param text $selectgroupid
+     * @param string $moduletype
+     * @param string $selectgroupid
      * @return array
      */
     public static function render_teams_card($courseid, $activityid, $moduletype, $selectgroupid) {
@@ -1008,7 +1109,7 @@ class local_teamwork_external extends external_api {
     /**
      * Returns result
      *
-     * @return result
+     * @return external_single_structure
      */
     public static function render_student_list_returns() {
         return new external_single_structure(
@@ -1023,8 +1124,8 @@ class local_teamwork_external extends external_api {
      *
      * @param int $courseid
      * @param int $activityid
-     * @param text $moduletype
-     * @param text $selectgroupid
+     * @param string $moduletype
+     * @param string $selectgroupid
      * @return array
      */
     public static function render_student_list($courseid, $activityid, $moduletype, $selectgroupid) {
@@ -1066,17 +1167,18 @@ class local_teamwork_external extends external_api {
      *
      * @param int $assignid assign instance id
      * @param int $userid user instance id
-     * @param text $content content pdf
+     * @param string $content content pdf
      * @return array of warnings and status result
      * @since Moodle 3.2
      */
-    public static function save_rubrics_pdf($assignid, $userid, $content) {
+    public static function save_rubrics_pdf($assignid, $currentuserid, $content) {
         global $DB, $USER, $CFG, $USER;
 
         $context = context_user::instance($USER->id);
         self::validate_context($context);
 
         require_once($CFG->dirroot . '/question/editlib.php');
+        require_once($CFG->dirroot . '/local/teamwork/locallib.php');
 
         $warnings = array();
         $result = array();
@@ -1085,33 +1187,45 @@ class local_teamwork_external extends external_api {
         list($module, $cm) = get_module_from_cmid($assignid);
         $context = context_module::instance($assignid);
 
-        $agrow = $DB->get_record('assign_grades', array('assignment' => $cm->instance, 'userid' => $userid));
-        if (!empty($agrow)) {
-            $itemid = $agrow->id;
-        } else {
-            $itemid = $DB->insert_record('assign_grades', array(
-                    'assignment' => $cm->instance,
-                    'userid' => $userid,
-                    'grader' => $USER->id,
-                    'grade' => -1,
-                    'timecreated' => time(),
-                    'timemodified' => time(),
-            ));
-        }
-
-        $filedata = new \StdClass();
-        $filedata->itemid = $itemid;
-        $filedata->userid = $USER->id;
-        $filedata->contextid = $context->id;
-        $filedata->component = 'assignfeedback_file';
-        $filedata->filearea = 'feedback_files';
-        $filedata->filepath = '/';
-        $filedata->filename = 'rubrics_' . time() . '.pdf';
+        $members = get_mod_events_members($context->instanceid, $currentuserid, 'assign');
+        $users = [$currentuserid];
 
         $content = base64_decode($content, false);
+        $filename = 'rubrics_' . time() . '.pdf';
 
-        // Save file.
-        $fs->create_file_from_string($filedata, $content);
+        if ($members != false) {
+            foreach ($members as $item) {
+                $users[] = $item->userid;
+            }
+        }
+
+        foreach ($users as $userid) {
+            $agrow = $DB->get_record('assign_grades', array('assignment' => $cm->instance, 'userid' => $userid));
+            if (!empty($agrow)) {
+                $itemid = $agrow->id;
+            } else {
+                $itemid = $DB->insert_record('assign_grades', array(
+                        'assignment' => $cm->instance,
+                        'userid' => $userid,
+                        'grader' => $userid,
+                        'grade' => -1,
+                        'timecreated' => time(),
+                        'timemodified' => time(),
+                ));
+            }
+
+            $filedata = new \StdClass();
+            $filedata->itemid = $itemid;
+            $filedata->userid = $userid;
+            $filedata->contextid = $context->id;
+            $filedata->component = 'assignfeedback_file';
+            $filedata->filearea = 'feedback_files';
+            $filedata->filepath = '/';
+            $filedata->filename = $filename;
+
+            // Save file.
+            $fs->create_file_from_string($filedata, $content);
+        }
 
         $result['status'] = true;
         $result['warnings'] = $warnings;
@@ -1133,4 +1247,67 @@ class local_teamwork_external extends external_api {
         );
     }
 
+    // Delete user submit.
+
+    /**
+     * Returns description of method parameters
+     *
+     * @return external_function_parameters
+     */
+    public static function delete_user_submit_parameters() {
+        return new external_function_parameters(
+                array(
+                        'userid' => new external_value(PARAM_INT, 'user id int', VALUE_DEFAULT, null),
+                        'teamid' => new external_value(PARAM_INT, 'team id int', VALUE_DEFAULT, null),
+                        'courseid' => new external_value(PARAM_INT, 'course id int', VALUE_DEFAULT, null),
+                        'activityid' => new external_value(PARAM_INT, 'activity id int', VALUE_DEFAULT, null),
+                        'moduletype' => new external_value(PARAM_RAW, 'moduletype text', VALUE_DEFAULT, null),
+                )
+        );
+    }
+
+    /**
+     * Returns result
+     *
+     * @return external_single_structure
+     */
+    public static function delete_user_submit_returns() {
+        return new external_single_structure(
+                array(
+                        'result' => new external_value(PARAM_RAW, 'result bool'),
+                )
+        );
+    }
+
+    /**
+     * Add share task
+     *
+     * @param int $userid
+     * @param int $teamid
+     * @param int $courseid
+     * @param int $activityid
+     * @param string $moduletype
+     * @param string $selectgroupid
+     * @return array
+     */
+    public static function delete_user_submit($userid, $teamid, $courseid, $activityid, $moduletype) {
+        global $USER;
+
+        $context = context_user::instance($USER->id);
+        self::validate_context($context);
+
+        $params = self::validate_parameters(self::delete_user_submit_parameters(),
+                array(
+                        'userid' => $userid,
+                        'teamid' => $teamid,
+                        'courseid' => $courseid,
+                        'activityid' => $activityid,
+                        'moduletype' => $moduletype,
+                )
+        );
+
+        $result = delete_user_submit($params['userid'], $params['teamid'], $params['activityid']);
+
+        return array('result' => json_encode($result));
+    }
 }

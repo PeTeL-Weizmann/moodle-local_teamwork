@@ -4,7 +4,7 @@
 .skin {
   position: fixed;
   overflow: hidden;
-  z-index: 10000;
+  /* z-index: 10000; */
   width: 80%;
   left: 10%;
   top: 12vh;
@@ -73,16 +73,18 @@
   cursor: pointer;
   transition: .2s; }
 
-.teamwork .btn {
-  cursor: pointer;
-  display: block;
-  color: #fff;
-  font: 600 18px/35px Assistant, sans-serif;
-  padding: 0 10px;
-  border: 1px solid #3f1c7a;
-  background-color: #3f1c7a;
-  border-radius: 5px;
-  transition: .2s; }
+/*6713 fix accessibility no need for code below*/
+/*.teamwork .btn {*/
+/*  cursor: pointer;*/
+/*  display: block;*/
+/*  color: #fff;*/
+/*  font: 600 18px/35px Assistant, sans-serif;*/
+/*  padding: 0 10px;*/
+/*  border: 1px solid #3f1c7a;*/
+/*  background-color: #3f1c7a;*/
+/*  border-radius: 5px;*/
+/*  transition: .2s; }*/
+
   .teamwork .btn-error {
     color: #dc3545;
     border-color: #dc3545;
@@ -136,10 +138,12 @@
     border-color: #9f8dbc; }
 
 .teamwork .btns-popup {
+  display: -ms-flexbox;
   display: flex;
   padding: 31px 14px;
   padding-bottom: 9px;
-  justify-content: flex-end; }
+  -ms-flex-pack: end;
+      justify-content: flex-end; }
   .teamwork .btns-popup .btn {
     padding: 0 24px;
     font-weight: 400; }
@@ -159,9 +163,11 @@
 
 .teamwork-modal {
   position: fixed;
+  display: -ms-flexbox;
   display: flex;
   overflow: hidden;
-  flex-direction: column;
+  -ms-flex-direction: column;
+      flex-direction: column;
   z-index: 10001;
   width: 561px;
   left: calc(50% - 280px);
@@ -174,13 +180,17 @@
 
 .teamwork-modal-error {
   background-color: #fff5f6;
-  align-items: center; }
+  -ms-flex-align: center;
+      align-items: center; }
   .teamwork-modal-error span {
     color: #dc3545;
+    display: -ms-flexbox;
     display: flex;
     height: 24vh;
-    align-items: center;
-    justify-content: center; }
+    -ms-flex-align: center;
+        align-items: center;
+    -ms-flex-pack: center;
+        justify-content: center; }
 
 .teamwork-modal-error-abs {
   position: absolute;
@@ -191,10 +201,14 @@
   z-index: 100;
   text-align: center;
   background-color: rgba(255, 230, 230, 0.9);
+  display: -ms-flexbox;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center; }
+  -ms-flex-direction: column;
+      flex-direction: column;
+  -ms-flex-pack: center;
+      justify-content: center;
+  -ms-flex-align: center;
+      align-items: center; }
   .teamwork-modal-error-abs span {
     color: #dc3545; }
 
@@ -202,6 +216,7 @@
   text-align: center; }
 
 .teamwork-modal_header {
+  display: -ms-flexbox;
   display: flex;
   padding: 0 12px;
   font: 400 30px/50px Assistant, sans-serif;
@@ -213,7 +228,13 @@
   margin-right: auto; }
 
 .teamwork-modal_close {
-  margin-left: auto; }
+  margin-left: auto;
+  border: none;
+  background-color: transparent;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center; }
 
 .teamwork-modal_close {
   cursor: pointer;
@@ -246,17 +267,24 @@
   padding-top: 70px; }
 
 .teamwork {
+  display: -ms-flexbox;
   display: flex;
   padding: 10px 0;
   height: 80vh;
   font: 400 1rem Assistant, sans-serif; }
+  .teamwork-inner {
+    height: calc(100% - 52px);
+  }
   .teamwork .teamwork_studets_wrap {
+    display: -ms-flexbox;
     display: flex;
-    flex-direction: column;
+    -ms-flex-direction: column;
+        flex-direction: column;
     width: 254px;
     margin-right: 10px;
     padding: 10px;
-    flex-shrink: 0;
+    -ms-flex-negative: 0;
+        flex-shrink: 0;
     border-radius: 5px;
     border: 1px solid #3f1c7a; }
   .teamwork .teamwork_select-legend {
@@ -280,7 +308,7 @@
       margin-left: 20px; }
   .teamwork .teamwork_select-wrap {
     display: none;
-    min-width: 150px;
+    min-width: 100%;
     position: absolute;
     border: 1px solid #959595;
     top: 36px;
@@ -301,10 +329,13 @@
     margin-top: 20px;
     font: 600 18px Assistant, sans-serif; }
   .teamwork .teamwork_select {
+    display: -ms-flexbox;
     display: flex;
-    align-items: center;
+    -ms-flex-align: center;
+        align-items: center;
     position: relative;
-    flex-shrink: 0; }
+    -ms-flex-negative: 0;
+        flex-shrink: 0; }
   .teamwork select {
     width: auto;
     background-color: #fff;
@@ -313,17 +344,21 @@
     margin-left: auto; }
   .teamwork .teamwork_students {
     margin-top: 10px;
+    display: -ms-flexbox;
     display: flex;
     overflow-y: auto;
-    flex-direction: column;
-    flex-grow: 1;
+    -ms-flex-direction: column;
+        flex-direction: column;
+    -ms-flex-positive: 1;
+        flex-grow: 1;
     border: 1px solid #959595;
     margin-bottom: 5px; }
   .teamwork .teamwork_student {
     cursor: move;
     padding: 5px;
     text-overflow: ellipsis;
-    flex-shrink: 0;
+    -ms-flex-negative: 0;
+        flex-shrink: 0;
     white-space: nowrap;
     overflow: hidden;
     transition: .2s;
@@ -334,9 +369,12 @@
       box-shadow: 0 0 3px rgba(0, 0, 0, 0.25);
       text-shadow: 0 0 black; }
   .teamwork .teamwork_search {
+    display: -ms-flexbox;
     display: flex;
-    align-items: center;
-    flex-shrink: 0; }
+    -ms-flex-align: center;
+        align-items: center;
+    -ms-flex-negative: 0;
+        flex-shrink: 0; }
   .teamwork .teamwork_search-label {
     font: 400 16px Assistant, sans-serif; }
   .teamwork .teamwork_search-input {
@@ -344,29 +382,51 @@
     border-radius: 5px;
     line-height: 30px;
     width: 10px;
-    flex-grow: 1;
+    -ms-flex-positive: 1;
+        flex-grow: 1;
     margin: 0 5px;
     padding: 0 5px; }
   .teamwork .teamwork_content {
     position: relative;
     overflow: hidden;
+    display: -ms-flexbox;
     display: flex;
-    flex-direction: column;
-    flex-grow: 1;
+    -ms-flex-direction: column;
+        flex-direction: column;
+    -ms-flex-positive: 1;
+        flex-grow: 1;
     padding: 10px 20px 20px;
     border-radius: 5px;
     border: 1px solid #3f1c7a; }
-  .teamwork .teamwork_controls {
+
+    .teamwork .teamwork_voice {
+    position: relative;
+    overflow: hidden;
+    display: -ms-flexbox;
     display: flex;
-    flex-shrink: 0; }
+    -ms-flex-direction: column;
+        flex-direction: column;
+    -ms-flex-positive: 1;
+        /* flex-grow: 1; */
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #3f1c7a; }
+
+    .teamwork .teamwork_controls {
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-negative: 0;
+        flex-shrink: 0; }
   .teamwork .teamwork_toggle-btn {
     cursor: pointer;
+    display: -ms-flexbox;
     display: flex;
     border-radius: 5px;
     padding: 0 10px;
     margin-right: 20px;
     border: 1px solid #3f1c7a;
-    align-items: center;
+    -ms-flex-align: center;
+        align-items: center;
     background-color: #fff;
     transition: .2s; }
     .teamwork .teamwork_toggle-btn:hover {
@@ -386,8 +446,10 @@
     background-color: #dc3545;
     border-radius: 10px;
     margin-right: 10px;
+    display: -ms-flexbox;
     display: flex;
-    align-items: center;
+    -ms-flex-align: center;
+        align-items: center;
     padding: 0 5px; }
     .teamwork .teamwork_toggle .teamwork_pin {
       width: 12px;
@@ -405,27 +467,34 @@
     color: #3f1c7a;
     font: 400 16px/40px Assistant, sans-serif; }
   .teamwork .teamwork_access span {
+    display: -ms-flexbox;
     display: flex;
-    align-items: center; }
+    -ms-flex-align: center;
+        align-items: center; }
   .teamwork .teamwork_btns {
+    display: -ms-flexbox;
     display: flex; }
     .teamwork .teamwork_btns button {
       margin-right: 10px; }
   .teamwork .teamwork_teams {
-    flex-grow: 1;
-    max-height: 92%;
+    -ms-flex-positive: 1;
+        flex-grow: 1;
     overflow-y: auto;
     overflow-x: hidden;
     margin-top: 20px;
     padding: 20px 30px;
     border: 1px solid #959595;
+    display: -ms-grid;
     display: grid;
     grid-gap: 30px;
-    grid-template-columns: repeat(4, auto); }
+    -ms-grid-columns: (auto)[4];
+        grid-template-columns: repeat(4, auto); }
   .teamwork .teamwork_team {
+    display: -ms-flexbox;
     display: flex;
-    flex-direction: column;
-    height: 300px;
+    -ms-flex-direction: column;
+        flex-direction: column;
+    height: 220px;
     max-width: 300px;
     border: 1px solid #a1a1a1;
     border-radius: 5px;
@@ -462,27 +531,42 @@
     transform: rotate(-45deg); }
   .teamwork .teamwork__team-header {
     position: relative;
+    display: -ms-flexbox;
     display: flex;
-    flex-shrink: 0; }
+    -ms-flex-negative: 0;
+        flex-shrink: 0; }
   .teamwork .teamwork_team-head {
     background-color: #fff;
     margin-right: auto;
     border-radius: 5px;
     margin-left: auto;
-    flex-shrink: 0;
+    -ms-flex-negative: 0;
+        flex-shrink: 0;
     display: contents;
-    flex-grow: 1; }
+    -ms-flex-positive: 1;
+        flex-grow: 1; }
     .teamwork .teamwork_team-head input {
       font: 400 16px/27px Assistant, sans-serif;
       background-color: #fff;
       border-radius: 5px;
       border: none;
       text-align: center;
-      width: 100%; }
+      width: 100%;
+      padding-right: 1.5rem; }
+    .teamwork .teamwork_team-head i {
+      font-size: 1rem;
+      color: inherit;
+      top: .4375rem;
+      right: .25rem;
+      z-index: 10;
+    }
   .teamwork .teamwork_team-inner {
+    display: -ms-flexbox;
     display: flex;
-    flex-grow: 1;
-    flex-direction: column;
+    -ms-flex-positive: 1;
+        flex-grow: 1;
+    -ms-flex-direction: column;
+        flex-direction: column;
     margin-top: 5px;
     padding-top: 10px;
     border-radius: 5px;
@@ -491,10 +575,11 @@
   .teamwork .add_team {
     cursor: pointer;
     position: absolute;
+    display: -ms-flexbox;
     display: flex;
     bottom: 30px;
     left: 30px;
-    background-color: #3f1c7a;
+    background: var(--petel-primary);
     border-radius: 50%;
     width: 50px;
     height: 50px;
@@ -553,7 +638,6 @@
 
 .gu-unselectable {
   -webkit-user-select: none !important;
-  -moz-user-select: none !important;
   -ms-user-select: none !important;
   user-select: none !important; }
 
@@ -574,9 +658,12 @@
 .student-setting-form {
   padding: 1.5rem 2rem; }
   .student-setting-form .input-label {
+    display: -ms-flexbox;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    -ms-flex-align: center;
+        align-items: center;
+    -ms-flex-pack: justify;
+        justify-content: space-between;
     margin: 0 auto;
     width: 100%;
     margin-bottom: 1rem; }
@@ -609,9 +696,12 @@
       padding-left: 0.5rem; }
     .student-setting-form .input-label .teamuserenddate-inputs-wrapper {
       width: 73%;
+      display: -ms-flexbox;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+      -ms-flex-align: center;
+          align-items: center;
       margin: 0;
       padding: 0; }
 
@@ -620,3 +710,20 @@
   top: 50%;
   width: 100%;
   text-align: center; }
+
+
+.delete_user_submit-btn {
+  top: 0;
+  right: 0;
+}
+/* Make sure RTL right side drawer menu is under team dialog overlay */
+.teamworkdialog {
+  z-index: 1000;
+}
+#page-mod-quiz-view #open_local {
+  margin: 1.5rem 0 !important;
+  display: flex;
+}
+#page-mod-quiz-view .teamwork_team {
+  text-align: left;
+}

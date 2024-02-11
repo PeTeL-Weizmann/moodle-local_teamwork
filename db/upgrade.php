@@ -23,8 +23,6 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * @param int $oldversion the version we are upgrading from
  * @return bool result
@@ -78,6 +76,70 @@ function xmldb_local_teamwork_upgrade($oldversion) {
         }
         // Teamwork savepoint reached.
         upgrade_plugin_savepoint(true, 2020060303, 'local', 'teamwork');
+    }
+
+    if ($oldversion < 2022080808) {
+
+        // Set defaults fo all langs.
+        $langs = [
+                'en',
+                'he',
+                'ru',
+                'he_kids',
+        ];
+        foreach ($langs as $lang) {
+
+            $manager = get_string_manager();
+
+            $langprefix = '_' . $lang;
+            $name = 'voice_ok_tokens' . $langprefix;
+            $default = $manager->get_string('voice_ok_tokens_default', "local_teamwork", null, $lang);
+            set_config($name, $default, 'local_teamwork');
+        }
+
+        // Schemes.
+        // Set defaults fo all langs.
+        $langs = [
+                'en',
+                'he',
+                'he_kids',
+                'ru',
+        ];
+        foreach ($langs as $lang) {
+            $manager = get_string_manager();
+            $langprefix = '_' . $lang;
+            $schemes = [
+                    'add_new_teamcard',
+                    'add_new_named_teamcard',
+                    'create_numbers_teamcard',
+                    'drag_student_card',
+                    'delete_teamcard',
+                    'read_users',
+                    'read_teams',
+                    'sing_a_song',
+            ];
+            $schemeprefix = 'scheme_';
+            foreach ($schemes as $key => $scheme) {
+                $name = $schemeprefix . $scheme . $langprefix;
+                $default = $manager->get_string($schemeprefix . $scheme . '_default', "local_teamwork", null, $lang);
+                set_config($name, $default, 'local_teamwork');
+            }
+        }
+
+        // Teamwork savepoint reached.
+        upgrade_plugin_savepoint(true, 2022080808, 'local', 'teamwork');
+    }
+
+    if ($oldversion < 2022080811) {
+        $table = new xmldb_table('local_teamwork');
+        $field = new xmldb_field('counter', XMLDB_TYPE_INTEGER, '5', null, null,
+                null, 0, 'teamuserenddate');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Teamwork savepoint reached.
+        upgrade_plugin_savepoint(true, 2022080811, 'local', 'teamwork');
     }
 
     return true;

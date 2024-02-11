@@ -74,6 +74,12 @@ define([
                         // Get the element.
                         var element = window.document.getElementsByClassName("gradingform_rubric")[0];
 
+                        var width = element.offsetWidth;
+                        width = width*(135/72);
+
+                        // var height = element.offsetHeight;
+                        var height = 841.89; // A4
+
                         // Generate the PDF.
                         self.loadingPage();
                         require(['local_teamwork/html2pdf_bundle'], function(html2pdf) {
@@ -89,7 +95,7 @@ define([
                                 margin: 1,
                                 filename: 'test.pdf',
                                 html2canvas: {scale: 2},
-                                jsPDF: {orientation: 'portrait', unit: 'in', format: 'letter', compressPDF: true}
+                                jsPDF: {orientation: 'portrait', unit: 'pt', format: [width, height], compressPDF: true}
                             }).outputPdf().then(function (pdf) {
 
                                 Ajax.call([{

@@ -175,12 +175,22 @@ $functions = array(
         ),
 
         'local_teamwork_save_rubrics_pdf' => array(
-                'classname'     => 'local_teamwork_external',
-                'methodname'    => 'save_rubrics_pdf',
-                'classpath'     => 'local/teamwork/externallib.php',
-                'description'   => 'Save rubrics to pdf.',
-                'type'          => 'write',
-                'ajax'          => true,
-                'services'      => array(MOODLE_OFFICIAL_MOBILE_SERVICE)
+                'classname' => 'local_teamwork_external',
+                'methodname' => 'save_rubrics_pdf',
+                'classpath' => 'local/teamwork/externallib.php',
+                'description' => 'Save rubrics to pdf.',
+                'type' => 'write',
+                'ajax' => true,
+                'services' => array(MOODLE_OFFICIAL_MOBILE_SERVICE)
+        ),
+
+        'local_teamwork_delete_user_submit' => array(
+                'classname' => 'local_teamwork_external',
+                'methodname' => 'delete_user_submit',
+                'classpath' => 'local/teamwork/externallib.php',
+                'description' => 'Delete user submit',
+                'type' => 'write',
+                'ajax' => true,
+                'services' => array(MOODLE_OFFICIAL_MOBILE_SERVICE)
         ),
 );

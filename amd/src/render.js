@@ -1,9 +1,12 @@
+/* eslint-disable no-console */
 define([
     'core/yui',
     "core/ajax",
     'local_teamwork/popup',
     'local_teamwork/skin',
-], function (Y, Ajax, popup, skin) {
+    'local_teamwork/keyboardnav',
+    'local_teamwork/voicecontrol',
+], function (Y, Ajax, popup, skin, Keyboardnav, Voicecontrol) {
     'use strict';
 
     let render = {
@@ -28,7 +31,9 @@ define([
         },
 
         // Open main block.
-        mainBlock: function (searchInit) {
+        mainBlock: function (searchInit, voicecontrolenabled) {
+
+
             Ajax.call([{
                 methodname: 'local_teamwork_render_teamwork_html',
                 args: {
@@ -43,6 +48,32 @@ define([
                     skin.content = result.content;
                     skin.show();
                     searchInit();
+
+                    Keyboardnav.getFocusableElements('.teamworkdialog');
+                    Keyboardnav.setAccessabilityBehaviuor();
+
+
+                    // Voicecontrol.voice_add_new_teamcard(
+                    //     Number(self.data.courseid),
+                    //     Number(self.data.activityid),
+                    //     self.data.moduletype,
+                    //     self.data.selectgroupid);
+
+
+                    // Voicecontrol.voice_drag_student_card(
+                    //     Number(self.data.courseid),
+                    //     Number(self.data.activityid),
+                    //     self.data.moduletype,
+                    //     self.data.selectgroupid
+                    //     // courseid, activityid, moduletype, selectgroupid,
+                    //     // self
+                    // );
+
+
+                    if (voicecontrolenabled !== 0) {
+                        Voicecontrol.update_commands();
+                    }
+
                 },
                 fail: function () {
                     popup.error();
@@ -53,7 +84,7 @@ define([
         studentList: function () {
             const targetBlock = document.querySelector('#studentList');
 
-            Ajax.call([{
+            return Ajax.call([{
                 methodname: 'local_teamwork_render_student_list',
                 args: {
                     courseid: Number(this.data.courseid),
@@ -64,6 +95,9 @@ define([
                 done: function (data) {
                     let result = JSON.parse(data.result);
                     targetBlock.innerHTML = result.content;
+                    Keyboardnav.getFocusableElements('.teamworkdialog');
+                    Keyboardnav.setAccessabilityBehaviuor();
+                    Keyboardnav.setFocusOnPrevfocusedElement();
                 },
                 fail: function () {
                     popup.error();
@@ -74,7 +108,7 @@ define([
         teamsCard: function () {
             const targetBlock = document.querySelector('#teamsCard');
 
-            Ajax.call([{
+            return Ajax.call([{
                 methodname: 'local_teamwork_render_teams_card',
                 args: {
                     courseid: Number(this.data.courseid),
@@ -85,6 +119,9 @@ define([
                 done: function (data) {
                     let result = JSON.parse(data.result);
                     targetBlock.innerHTML = result.content;
+                    Keyboardnav.getFocusableElements('.teamworkdialog');
+                    Keyboardnav.setAccessabilityBehaviuor();
+                    Keyboardnav.setFocusOnPrevfocusedElement();
                 },
                 fail: function () {
                     popup.error();

@@ -17,10 +17,9 @@
 /**
  * Plugin event observers are registered here.
  *
- * @package     local_teamwork
- * @category    local
- * @copyright   2019 Devlion  <info@devlion.co
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package    local_teamwork
+ * @copyright  2018 Devlion <info@devlion.co>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -30,49 +29,64 @@ defined('MOODLE_INTERNAL') || die();
 
 $observers = array(
 
-        array(
-                'eventname' => '\mod_assign\event\submission_graded',
-                'callback' => '\local_teamwork\observer::update_team_members_grades',
-                'schedule' => 'instant',
-        ),
-        //array(
-        //        'eventname' => '\assignsubmission_onlinetext\event\submission_updated',
-        //        'callback' => '\local_teamwork\observer::update_team_memebers_submision_onlinetext',
-        //        'schedule' => 'instant',
-        //),
-        //array(
-        //        'eventname' => '\assignsubmission_onlinetext\event\submission_created',
-        //        'callback' => '\local_teamwork\observer::create_team_memebers_submision_onlinetext',
-        //        'schedule' => 'instant',
-        //),
-        array(
-                'eventname' => '\assignsubmission_file\event\submission_updated',
-                'callback' => '\local_teamwork\observer::update_team_memebers_submision_status_updated',
-                'schedule' => 'instant',
-        ),
-        array(
-                'eventname' => '\mod_assign\event\submission_created',
-                'callback' => '\local_teamwork\observer::update_team_memebers_submision_status_created',
-                'schedule' => 'instant',
-        ),
-        array(
-                'eventname' => '\assignsubmission_file\event\assessable_uploaded',
-                'callback' => '\local_teamwork\observer::update_team_memebers_submitted_files_uploaded',
-                'schedule' => 'instant',
-        ),
+        // Common.
         array(
                 'eventname' => '\core\event\course_module_deleted',
                 'callback' => '\local_teamwork\observer::course_module_deleted',
                 'schedule' => 'instant',
         ),
+
+        // Quiz.
+        array(
+                'eventname' => '\mod_quiz\event\question_manually_graded',
+                'callback' => '\local_teamwork\observer_quiz::question_manually_graded',
+                'schedule' => 'instant',
+        ),
+        array(
+                'eventname' => '\mod_quiz\event\attempt_submitted',
+                'callback' => '\local_teamwork\observer_quiz::attempt_submitted',
+                'schedule' => 'instant',
+        ),
+
+        // Assign.
+        array(
+                'eventname' => '\mod_assign\event\submission_graded',
+                'callback' => '\local_teamwork\observer_assign::update_team_members_grades',
+                'schedule' => 'instant',
+        ),
+        array(
+                'eventname' => '\assignsubmission_file\event\submission_updated',
+                'callback' => '\local_teamwork\observer_assign::update_team_memebers_submision_status_updated',
+                'schedule' => 'instant',
+        ),
+        array(
+                'eventname' => '\mod_assign\event\submission_created',
+                'callback' => '\local_teamwork\observer_assign::update_team_memebers_submision_status_created',
+                'schedule' => 'instant',
+        ),
+        array(
+                'eventname' => '\assignsubmission_file\event\assessable_uploaded',
+                'callback' => '\local_teamwork\observer_assign::update_team_memebers_submitted_files_uploaded',
+                'schedule' => 'instant',
+        ),
         array(
                 'eventname' => '\assignsubmission_comments\event\comment_created',
-                'callback' => '\local_teamwork\observer::comment_created',
+                'callback' => '\local_teamwork\observer_assign::comment_created',
                 'schedule' => 'instant',
         ),
         array(
                 'eventname' => '\assignsubmission_comments\event\comment_deleted',
-                'callback' => '\local_teamwork\observer::comment_deleted',
+                'callback' => '\local_teamwork\observer_assign::comment_deleted',
+                'schedule' => 'instant',
+        ),
+        array(
+                'eventname' => '\mod_assign\event\grading_form_viewed',
+                'callback' => '\local_teamwork\observer_assign::grading_form_viewed',
+                'schedule' => 'instant',
+        ),
+        array(
+                'eventname' => '\mod_assign\event\submission_status_updated',
+                'callback' => '\local_teamwork\observer_assign::submission_status_updated',
                 'schedule' => 'instant',
         )
 );

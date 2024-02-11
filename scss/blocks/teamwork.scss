@@ -41,7 +41,7 @@
 
     .teamwork_select-wrap {
         display: none;
-        min-width: 150px;
+        min-width: 100%;
         position: absolute;
         border: 1px solid #959595;
         top: 36px;
@@ -223,7 +223,6 @@
 
     .teamwork_teams {
         flex-grow: 1;
-        max-height: 92%;
         overflow-y: auto;
         overflow-x: hidden;
         margin-top: 20px;
@@ -237,7 +236,7 @@
     .teamwork_team {
         display: flex;
         flex-direction: column;
-        height: 300px;
+        height: 220px;
         max-width: 300px;
         border: 1px solid #a1a1a1;
         border-radius: 5px;
@@ -302,6 +301,14 @@
             border: none;
             text-align: center;
             width: 100%;
+            padding-right: 1.5rem;
+        }
+        i {
+            font-size: 1rem;
+            color: inherit;
+            top: .4375rem;
+            right: .25rem;
+            z-index: 10;
         }
     }
 

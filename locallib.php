@@ -31,11 +31,11 @@ require_once($CFG->dirroot . '/mod/assign/locallib.php');
 define('LOCAL_TEAMWORK_USERS_IN_GROUP', '5');
 
 // Get module name.
-function get_module_name($activityid) {
-    global $CFG, $USER, $DB, $PAGE;
+function get_module_name($cmid) {
+    global $DB;
 
-    $sql = "SELECT m.name FROM {course_modules} AS cm LEFT JOIN {modules} AS m ON(cm.module=m.id) WHERE cm.id=?";
-    $activity = $DB->get_record_sql($sql, array($activityid));
+    $sql = "SELECT m.name FROM {course_modules} cm LEFT JOIN {modules} m ON(cm.module=m.id) WHERE cm.id=?";
+    $activity = $DB->get_record_sql($sql, [$cmid]);
 
     if (!empty($activity)) {
         return $activity->name;
@@ -45,31 +45,36 @@ function get_module_name($activityid) {
 }
 
 // Get mod events members.
-function get_mod_events_members($activityid, $userid, $mod) {
-    global $CFG, $USER, $DB, $PAGE;
+function get_mod_events_members($cmid, $userid, $moduletype) {
+    global $DB;
 
-    if (!in_array($mod, array('quiz', 'assign'))) {
-        return false;
-    }
-
-    $teamwork = $DB->get_record('local_teamwork', array('moduleid' => $activityid, 'type' => $mod, 'active' => 1));
+    $teamwork = $DB->get_record('local_teamwork', ['moduleid' => $cmid, 'type' => $moduletype, 'active' => 1]);
     if (!empty($teamwork)) {
-        $data = array();
+        $data = [];
+        $cm = $DB->get_record('course_modules', ['id' => $cmid]);
 
-        $teamgroup = $DB->get_records('local_teamwork_groups', array('teamworkid' => $teamwork->id));
+        $teamgroup = $DB->get_records('local_teamwork_groups', ['teamworkid' => $teamwork->id]);
         foreach ($teamgroup as $group) {
             $sql = "
                 SELECT tm.userid, CONCAT(u.firstname,' ',u.lastname) AS name
-                FROM {local_teamwork_members} AS tm
-                LEFT JOIN {user} AS u ON(u.id=tm.userid)
-                WHERE tm.teamworkgroupid=?
+                FROM {local_teamwork_members} tm
+                LEFT JOIN {user} u ON(u.id=tm.userid)
+                JOIN {user_enrolments} ue_f ON ue_f.userid = u.id 
+                JOIN {enrol} ej4_e ON (ej4_e.id = ue_f.enrolid AND ej4_e.courseid = ?) 
+                WHERE u.suspended = 0 AND ue_f.status = 0 AND tm.teamworkgroupid=?
+                AND ( 
+                        (ue_f.timestart = '0' AND ue_f.timeend = '0') OR 
+                        (ue_f.timestart = '0' AND ue_f.timeend > UNIX_TIMESTAMP()) OR 
+                        (ue_f.timeend = '0' AND ue_f.timestart < UNIX_TIMESTAMP()) OR
+                        (ue_f.timeend > UNIX_TIMESTAMP() AND ue_f.timestart < UNIX_TIMESTAMP())
+                    )
             ";
 
-            $users = $DB->get_records_sql($sql, array($group->id));
+            $users = $DB->get_records_sql($sql, [$cm->course, $group->id]);
             $data[] = $users;
         }
 
-        $result = array();
+        $result = [];
         foreach ($data as $group) {
             foreach ($group as $k => $item) {
                 if ($item->userid == $userid) {
@@ -88,21 +93,15 @@ function get_mod_events_members($activityid, $userid, $mod) {
 
 // If user teacher on course.
 function if_user_teacher_on_course($courseid) {
-    global $CFG, $USER, $DB, $PAGE;
+    global $USER;
 
     if (is_siteadmin()) {
         return true;
     }
 
-    $permissions = array('editingteacher', 'teacher', 'coursecreator');
     $context = context_course::instance($courseid);
-    $roles = get_user_roles($context, $USER->id);
-
-    foreach ($roles as $role) {
-        if (in_array($role->shortname, $permissions)) {
-            return true;
-        }
-
+    if (has_capability('local/teamwork:manageteams', $context, $USER->id)) {
+        return true;
     }
 
     return false;
@@ -110,9 +109,9 @@ function if_user_teacher_on_course($courseid) {
 
 // If user student on course.
 function if_user_student_on_course($courseid) {
-    global $CFG, $USER, $DB, $PAGE;
+    global $USER;
 
-    $permissions = array('student');
+    $permissions = ['student'];
     $context = context_course::instance($courseid);
     $roles = get_user_roles($context, $USER->id);
 
@@ -125,42 +124,34 @@ function if_user_student_on_course($courseid) {
     return false;
 }
 
-// If user student on course.
-function if_to_user_groups_empty($courseid) {
-    global $CFG, $USER, $DB, $PAGE;
-
-    $groups = view_groups_select($courseid);
-
-    if (empty($groups)) {
-        return true;
-    }
-
-    return false;
-}
-
 // Return users data for students fo HTML.
-function return_data_for_student_tohtml($activityid, $moduletype, $courseid, $jsonselectgroupid) {
-    global $CFG, $USER, $DB, $PAGE;
+function return_data_for_student_tohtml($cmid, $moduletype, $courseid) {
+    global $USER;
 
-    $result = array();
-    $cards = get_cards($activityid, $moduletype, $courseid, $jsonselectgroupid[0]);
+    $groups = view_groups_select($courseid, $cmid);
 
-    foreach ($cards as $card) {
-        foreach ($card['users'] as $user) {
-            if ($user->userid == $USER->id) {
-                $result[] = $card;
-                break;
+    $result = [];
+    foreach ($groups as $group) {
+        $cards = get_cards($cmid, $moduletype, $courseid, $group->id);
+
+        foreach ($cards as $card) {
+            foreach ($card['users'] as $user) {
+                if ($user->userid == $USER->id) {
+                    $result[] = $card;
+                    break;
+                }
             }
         }
     }
+
     return $result;
 }
 
 // If team block enable.
-function if_teamwork_enable($activityid) {
-    global $CFG, $USER, $DB, $PAGE;
+function if_teamwork_enable($cmid) {
+    global $DB;
 
-    $teamwork = $DB->get_record('local_teamwork', array('moduleid' => $activityid, 'type' => get_module_name($activityid)));
+    $teamwork = $DB->get_record('local_teamwork', ['moduleid' => $cmid, 'type' => get_module_name($cmid)]);
     if (!empty($teamwork) && $teamwork->active == 1) {
         return true;
     }
@@ -169,10 +160,10 @@ function if_teamwork_enable($activityid) {
 }
 
 // If access to student.
-function if_access_to_student($activityid) {
-    global $CFG, $USER, $DB, $PAGE;
+function if_access_to_student($cmid) {
+    global $DB;
 
-    $teamwork = $DB->get_record('local_teamwork', array('moduleid' => $activityid, 'type' => get_module_name($activityid)));
+    $teamwork = $DB->get_record('local_teamwork', ['moduleid' => $cmid, 'type' => get_module_name($cmid)]);
     if (!empty($teamwork)) {
         // Check if enddate validation is off and studentediting is on.
         if ($teamwork->teamuserallowenddate == 0 && $teamwork->studentediting == 1) {
@@ -192,10 +183,10 @@ function if_access_to_student($activityid) {
 }
 
 // Status of the button - Choice by students.
-function students_button_status($activityid) {
+function students_button_status($cmid) {
     global $DB;
 
-    $teamwork = $DB->get_record('local_teamwork', array('moduleid' => $activityid, 'type' => get_module_name($activityid)));
+    $teamwork = $DB->get_record('local_teamwork', ['moduleid' => $cmid, 'type' => get_module_name($cmid)]);
     if (!empty($teamwork) && $teamwork->studentediting == 1) {
         return true;
     } else {
@@ -208,19 +199,20 @@ function students_button_status($activityid) {
  * SG - #855
  *
  * @param int $courseid
- * @param int $activityid
+ * @param int $cmid
  * @return bool
  */
-function allow_add_teams($courseid, $activityid, $selectgroupid) {
+function allow_add_teams($courseid, $cmid, $selectgroupid) {
     global $DB;
+
     if (if_user_teacher_on_course($courseid)) {
         return true;
-    } else if (if_user_student_on_course($courseid) && if_access_to_student($activityid)) {
+    } else if (if_user_student_on_course($courseid) && if_access_to_student($cmid)) {
         // Check if student can access to team building by time limit criteria and action is allowed by teacher.
         // SG - local 1. If teanumber limit is exceeded - don't allow add teams.
-        $teamwork = $DB->get_record('local_teamwork', array('moduleid' => $activityid, 'type' => get_module_name($activityid)));
+        $teamwork = $DB->get_record('local_teamwork', ['moduleid' => $cmid, 'type' => get_module_name($cmid)]);
         if (!empty($teamwork)) {
-            $groups = $DB->get_records('local_teamwork_groups', array('teamworkid' => $teamwork->id, 'groupid' => $selectgroupid));
+            $groups = $DB->get_records('local_teamwork_groups', ['teamworkid' => $teamwork->id, 'groupid' => $selectgroupid]);
             if (count($groups) >= $teamwork->teamnumbers && !empty($teamwork->teamnumbers)) {
                 return false;
             }
@@ -240,25 +232,50 @@ function get_groups_course($courseid) {
 }
 
 // Get groups of course and all users.
-function view_groups_select($courseid) {
-    global $USER;
+function view_groups_select($courseid, $cmid) {
+    global $USER, $DB;
 
+    $course = $DB->get_record('course', ['id' => $courseid]);
+    $cm = $DB->get_record('course_modules', ['id' => $cmid]);
+
+    $activegroup = groups_get_activity_group($cm);
     $groupallstudents = get_groups_course($courseid);
 
+    if ($course && in_array($course->groupmode, [1]) && $activegroup != 0) {
+        $tmp = [];
+        foreach ($groupallstudents as $item) {
+            if ($item->id == $activegroup) {
+                $tmp[] = $item;
+            }
+        }
+
+        $groupallstudents = $tmp;
+    }
+
     if (if_user_teacher_on_course($courseid)) {
-        $obj = new stdClass();
+
+        $obj = new \stdClass();
         $obj->id = 0;
         $obj->courseid = $courseid;
         $obj->name = get_string('allstudents', 'local_teamwork');
 
         array_unshift($groupallstudents, $obj);
 
+        //if ($course && in_array($course->groupmode, [1, 2]) && $activegroup == 0) {
+        //    $obj = new \stdClass();
+        //    $obj->id = -1;
+        //    $obj->courseid = $courseid;
+        //    $obj->name = get_string('selectgroup', 'local_teamwork');
+        //
+        //    array_unshift($groupallstudents, $obj);
+        //}
+
         return $groupallstudents;
     }
 
     // If student.
     if (if_user_student_on_course($courseid)) {
-        $newgroupallstudents = array();
+        $newgroupallstudents = [];
 
         // If student in group.
         foreach ($groupallstudents as $group) {
@@ -277,8 +294,8 @@ function view_groups_select($courseid) {
             }
         }
 
-        // If seudent not in group.
-        if(empty($newgroupallstudents)){
+        // If student not in group.
+        if (empty($newgroupallstudents)) {
             $obj = new stdClass();
             $obj->id = 0;
             $obj->courseid = $courseid;
@@ -293,7 +310,10 @@ function view_groups_select($courseid) {
 
 // Get student users of course.
 function get_students_course($courseid) {
-    global $CFG, $USER, $DB, $PAGE;
+    global $CFG, $DB;
+
+    // PTL-6209 Roles to use when populating users in the "student" list
+    $teamstudentsroles = $CFG->teamstudentsroles ?? "'student'";
 
     $sql = "
         SELECT u.id as userid, CONCAT(u.firstname,' ',u.lastname) as name
@@ -302,28 +322,61 @@ function get_students_course($courseid) {
         INNER JOIN {context} ct ON ct.id = ra.contextid
         INNER JOIN {course} c ON c.id = ct.instanceid
         INNER JOIN {role} r ON r.id = ra.roleid
-        WHERE r.shortname=? AND c.id=?
+        JOIN {user_enrolments} ue_f ON ue_f.userid = u.id
+		JOIN {enrol} ej4_e ON (ej4_e.id = ue_f.enrolid AND ej4_e.courseid = ?)
+        WHERE u.suspended = 0 AND ue_f.status = 0 AND c.id=?
+          AND r.shortname IN ($teamstudentsroles)
+        AND (
+                (ue_f.timestart = '0' AND ue_f.timeend = '0') OR
+                (ue_f.timestart = '0' AND ue_f.timeend > UNIX_TIMESTAMP()) OR
+                (ue_f.timeend = '0' AND ue_f.timestart < UNIX_TIMESTAMP()) OR
+                (ue_f.timeend > UNIX_TIMESTAMP() AND ue_f.timestart < UNIX_TIMESTAMP())
+            )
     ";
-    $students = $DB->get_records_sql($sql, array('student', $courseid));
+    $students = $DB->get_records_sql($sql, [$courseid, $courseid]);
 
     return array_values($students);
 }
 
 // Get students by group.
 function get_students_by_group($groupid, $courseid) {
-    $roles = array();
-    $result = array();
+    global $DB;
 
-    if ($groupmemberroles = groups_get_members_by_role($groupid, $courseid, 'u.id, ' . get_all_user_name_fields(true, 'u'))) {
+    $roles = $result = [];
+
+    $userfieldsapi = \core_user\fields::for_name();
+    $allnames = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
+
+    if ($groupmemberroles = groups_get_members_by_role($groupid, $courseid, 'u.id, ' . $allnames)) {
         foreach ($groupmemberroles as $roleid => $roledata) {
             $shortroledata = new stdClass();
             $shortroledata->name = $roledata->name;
-            $shortroledata->users = array();
+            $shortroledata->users = [];
             foreach ($roledata->users as $member) {
-                $shortmember = new stdClass();
-                $shortmember->userid = $member->id;
-                $shortmember->name = fullname($member, true);
-                $shortroledata->users[] = $shortmember;
+                $sql = "
+                    SELECT *
+                    FROM {user} u
+                    INNER JOIN {role_assignments} ra ON ra.userid = u.id      
+                    INNER JOIN {context} ct ON ct.id = ra.contextid
+                    INNER JOIN {course} c ON c.id = ct.instanceid            
+                    JOIN {user_enrolments} ue_f ON ue_f.userid = u.id 
+                    JOIN {enrol} ej4_e ON (ej4_e.id = ue_f.enrolid AND ej4_e.courseid = ?)
+                    WHERE u.suspended = 0 AND ue_f.status = 0 AND c.id=? AND u.id=?
+                    AND ( 
+                            (ue_f.timestart = '0' AND ue_f.timeend = '0') OR 
+                            (ue_f.timestart = '0' AND ue_f.timeend > UNIX_TIMESTAMP()) OR 
+                            (ue_f.timeend = '0' AND ue_f.timestart < UNIX_TIMESTAMP()) OR
+                            (ue_f.timeend > UNIX_TIMESTAMP() AND ue_f.timestart < UNIX_TIMESTAMP())
+                        )
+                ";
+                $res = $DB->get_records_sql($sql, [$courseid, $courseid, $member->id]);
+
+                if (!empty($res)) {
+                    $shortmember = new stdClass();
+                    $shortmember->userid = $member->id;
+                    $shortmember->name = fullname($member, true);
+                    $shortroledata->users[] = $shortmember;
+                }
             }
             $roles[] = $shortroledata;
         }
@@ -339,13 +392,10 @@ function get_students_by_group($groupid, $courseid) {
 }
 
 // Get students by select.
-function get_students_by_select($jsonselectid, $courseid, $activityid, $moduletype) {
-    global $USER;
+function get_students_by_select($jsonselectid, $courseid, $cmid, $moduletype) {
 
-    $result = array();
+    $result = $students = [];
     $arrselectid = json_decode($jsonselectid);
-
-    $students = array();
 
     foreach ($arrselectid as $selectid) {
         if ($selectid == 0) {
@@ -367,8 +417,8 @@ function get_students_by_select($jsonselectid, $courseid, $activityid, $modulety
     }
 
     // Get Users from cards.
-    $cardsusers = array();
-    $cards = get_cards($activityid, $moduletype, $courseid, $arrselectid[0]);
+    $cardsusers = [];
+    $cards = get_cards($cmid, $moduletype, $courseid, $arrselectid[0]);
     foreach ($cards as $card) {
         foreach ($card['users'] as $user) {
             $cardsusers[] = $user;
@@ -391,29 +441,46 @@ function get_students_by_select($jsonselectid, $courseid, $activityid, $modulety
 }
 
 // Return cards.
-function get_cards($activityid, $moduletype, $courseid, $groupid) {
-    global $CFG, $USER, $DB, $PAGE;
+function get_cards($cmid, $moduletype, $courseid, $groupid) {
+    global $USER, $DB;
 
-    $data = array();
+    $data = [];
 
-    $teamwork = $DB->get_record('local_teamwork', array('moduleid' => $activityid, 'type' => $moduletype));
+    $teamwork = $DB->get_record('local_teamwork', ['moduleid' => $cmid, 'type' => $moduletype]);
     if (!empty($teamwork)) {
-        $teamgroup = $DB->get_records('local_teamwork_groups', array('teamworkid' => $teamwork->id, 'groupid' => $groupid));
+
+        $sql = "
+            SELECT *
+            FROM {local_teamwork_groups}
+            WHERE teamworkid=? AND groupid=?
+            ORDER BY name ASC
+        ";
+
+        $teamgroup = $DB->get_records_sql($sql, [$teamwork->id, $groupid]);
+
         foreach ($teamgroup as $group) {
             $sql = "
                 SELECT tm.userid, CONCAT(u.firstname,' ',u.lastname) AS name
                 FROM {local_teamwork_members} AS tm
                 LEFT JOIN {user} AS u ON(u.id=tm.userid)
-                WHERE tm.teamworkgroupid=?
+                JOIN {user_enrolments} ue_f ON ue_f.userid = u.id 
+                JOIN {enrol} ej4_e ON (ej4_e.id = ue_f.enrolid AND ej4_e.courseid = ?) 
+                WHERE u.suspended = 0 AND ue_f.status = 0 AND tm.teamworkgroupid=?
+                AND ( 
+                        (ue_f.timestart = '0' AND ue_f.timeend = '0') OR 
+                        (ue_f.timestart = '0' AND ue_f.timeend > UNIX_TIMESTAMP()) OR 
+                        (ue_f.timeend = '0' AND ue_f.timestart < UNIX_TIMESTAMP()) OR
+                        (ue_f.timeend > UNIX_TIMESTAMP() AND ue_f.timestart < UNIX_TIMESTAMP())
+                    )
             ";
-            $users = $DB->get_records_sql($sql, array($group->id));
+            $users = $DB->get_records_sql($sql, [$courseid, $group->id]);
 
-            $tmp = array(
+            $tmp = [
                     'cardid' => $group->id,
                     'cardname' => $group->name,
                     'ifedit' => (if_user_student_on_course($courseid)) ? true : false,
-                    'users' => array(),
-            );
+                    'users' => [],
+            ];
 
             if (!empty($users)) {
 
@@ -444,24 +511,26 @@ function get_cards($activityid, $moduletype, $courseid, $groupid) {
 }
 
 // Add new card with/witout users.
-function add_new_card($activityid, $moduletype, $selectgroupid, $users = array(), $courseid) {
-    global $CFG, $USER, $DB, $PAGE;
+function add_new_card($cmid, $moduletype, $selectgroupid, $courseid, $name = null, $users = []) {
+    global $USER, $DB;
 
-    $teamwork = $DB->get_record('local_teamwork', array('moduleid' => $activityid, 'type' => $moduletype));
+    $teamwork = $DB->get_record('local_teamwork', ['moduleid' => $cmid, 'type' => $moduletype]);
     if (!empty($teamwork)) {
-        $groups = $DB->get_records('local_teamwork_groups', array('teamworkid' => $teamwork->id, 'groupid' => $selectgroupid));
+        $groups = $DB->get_records('local_teamwork_groups', ['teamworkid' => $teamwork->id, 'groupid' => $selectgroupid]);
 
         // SG - Do not create new card, if it is student and teamnumbers limit is exceeded. Throw an error.
         if (count($groups) >= $teamwork->teamnumbers && !empty($teamwork->teamnumbers) && if_user_student_on_course($courseid)) {
-            return array('error' => 3, 'errormsg' => get_string('exceedteamnumberslimit', 'local_teamwork'));
+            return ['error' => 3, 'errormsg' => get_string('exceedteamnumberslimit', 'local_teamwork')];
         }
 
         // SG - #855 - if student and if is not in any team yet - add him to the new card.
         if (if_user_student_on_course($courseid)) {
-            $groupid = json_encode(array($selectgroupid)); // Uly hack, to comply function get_students_by_select() below.
+
+            // Uly hack, to comply function get_students_by_select() below.
+            $groupid = json_encode([$selectgroupid]);
 
             // Get all student, who are out of teams (not in cards).
-            $studselect = get_students_by_select($groupid, $courseid, $activityid, $moduletype);
+            $studselect = get_students_by_select($groupid, $courseid, $cmid, $moduletype);
 
             foreach ($studselect as $stud) {
                 if ($stud->userid == $USER->id) {
@@ -473,15 +542,19 @@ function add_new_card($activityid, $moduletype, $selectgroupid, $users = array()
             if (!empty($tmpusers)) {
                 $users = array_merge($users, $tmpusers);
             } else {
-                return array('error' => 4, 'errormsg' => get_string('exceedstudentteamslimit', 'local_teamwork'));
+                return ['error' => 4, 'errormsg' => get_string('exceedstudentteamslimit', 'local_teamwork')];
             }
         }
 
-        $nextnumber = count($groups) + 1;
+        // Update counter.
+        $teamwork->counter = $teamwork->counter + 1;
+        $DB->update_record('local_teamwork', $teamwork);
+
+        $nextnumber = str_pad($teamwork->counter, 2, "0", STR_PAD_LEFT);
 
         $dataobject = new stdClass();
         $dataobject->teamworkid = $teamwork->id;
-        $dataobject->name = get_string('defaultnamegroup', 'local_teamwork') . ' ' . $nextnumber;
+        $dataobject->name = $name ?? get_string('defaultnamegroup', 'local_teamwork') . ' ' . $nextnumber;
         $dataobject->groupid = $selectgroupid;
         $dataobject->timecreated = time();
         $dataobject->timemodified = time();
@@ -498,220 +571,128 @@ function add_new_card($activityid, $moduletype, $selectgroupid, $users = array()
                 $DB->insert_record('local_teamwork_members', $dataobject);
             }
         }
-
     }
 
     return true;
 }
 
-function add_comments_to_assign($comment) {
-    global $DB, $CFG;
-
-    $submission = $DB->get_record('assign_submission', array('id' => $comment->itemid));
-
-    // Get contents of current user.
-    $obj = array(
-            'contextid' => $comment->contextid,
-            'component' => 'assignsubmission_comments',
-            'commentarea' => 'submission_comments',
-            'itemid' => $submission->id,
-    );
-    $usercomments = $DB->get_records('comments', $obj);
-
-    $context = $DB->get_record('context', array('id' => $comment->contextid));
-    $members = get_mod_events_members($context->instanceid, $submission->userid, 'assign');
-    if ($members && !empty($members)) {
-        foreach ($members as $member) {
-            $assignrow = $DB->get_record('assign_submission', array(
-                            'assignment' => $submission->assignment,
-                            'userid' => $member->userid)
-            );
-
-            // Delete all comments by user.
-            // Check if present comments and delete.
-            $obj = array(
-                    'contextid' => $comment->contextid,
-                    'component' => 'assignsubmission_comments',
-                    'commentarea' => 'submission_comments',
-                    'itemid' => $assignrow->id,
-            );
-            $row = $DB->get_records('comments', $obj);
-            if ($row) {
-                $DB->delete_records('comments', $obj);
-            }
-
-            // Insert previus comments.
-            foreach ($usercomments as $item) {
-                unset($item->id);
-                $item->itemid = $assignrow->id;
-                $DB->insert_record('comments', $item);
-            }
-
-            $insert = array(
-                    'contextid' => $comment->contextid,
-                    'commentarea' => $comment->commentarea,
-                    'itemid' => $assignrow->id,
-                    'component' => $comment->component,
-                    'content' => $comment->content,
-                    'format' => $comment->format,
-                    'userid' => $comment->userid,
-                    'timecreated' => $comment->timecreated,
-            );
-
-            $DB->insert_record('comments', $insert);
-
-        }
-    }
-}
-
-/**
- * clone_user_assignment_rubrics
- *
- * @param mixed $userid
- * @param mixed $instanceid
- * @param mixed $targetusers
- *
- * @return void
- */
-function clone_user_assignment_fillings($userid, $instanceid, $targetusers) {
+function delete_user_submit($userid, $teamid, $cmid) {
     global $DB;
-    $assign = $DB->get_record('course_modules', ['id' => $instanceid]);
-    // Actual item id.
-    $actualassigngrade = $DB->get_record('assign_grades', ['userid' => $userid, 'assignment' => $assign->instance]);
-    $actualgradinginstance = $DB->get_record('grading_instances', ['itemid' => $actualassigngrade->id, 'status' => 1]);
-    if (!$actualgradinginstance) {
+
+    // Delete grade.
+    $cm = $DB->get_record('course_modules', ['id' => $cmid]);
+    if (!$cm) {
         return false;
     }
-    foreach ($targetusers as $targetuser) {
-        // Old item id.
-        $oldassigngrade = $DB->get_record('assign_grades', ['userid' => $targetuser->userid, 'assignment' => $assign->instance]);
-        if (!$oldassigngrade) {
-            $oldassigngrade = clone $actualassigngrade;
-            unset($oldassigngrade->id);
-            $oldassigngrade->userid = $targetuser->userid;
-            $newoldassigngradeinsert = $DB->insert_record('assign_grades', $oldassigngrade);
-            $oldassigngrade->id = $newoldassigngradeinsert;
-        }
 
-        // Delete old fillings.
-        $oldinstancesforitem = $DB->get_records('grading_instances', ['itemid' => $oldassigngrade->id]);
-        foreach ($oldinstancesforitem as $oldinstanceforitem) {
-            $DB->delete_records('gradingform_guide_fillings', ['instanceid' => $oldinstanceforitem->id]);
-            $DB->delete_records('gradingform_rubric_fillings', ['instanceid' => $oldinstanceforitem->id]);
-        }
+    $context = \context_module::instance($cm->id);
+    $module = $DB->get_record('modules', ['id' => $cm->module]);
 
-        // Delete old instances.
-        $DB->delete_records('grading_instances', ['itemid' => $oldassigngrade->id]);
-        $temp = clone $actualgradinginstance;
-        $temp->itemid = $oldassigngrade->id;
-        unset($temp->id);
-        $temp->feedback = $targetuser->userid;
-        $DB->insert_record('grading_instances', $temp);
-        $gradinginstance = $DB->get_record('grading_instances', ['itemid' => $oldassigngrade->id, 'status' => 1]);
-
-        // Guide.
-        $actualfillings = $DB->get_records('gradingform_guide_fillings', ['instanceid' => $actualgradinginstance->id]);
-        if (!empty($actualfillings)) {
-            clone_fillings($actualfillings, $gradinginstance->id, 'gradingform_guide_fillings');
-        }
-
-        // Rubric.
-        $actualfillings = $DB->get_records('gradingform_rubric_fillings', ['instanceid' => $actualgradinginstance->id]);
-        if (!empty($actualfillings)) {
-            clone_fillings($actualfillings, $gradinginstance->id, 'gradingform_rubric_fillings');
-        }
-    }
-}
-
-/**
- * update_user_final_grades
- *
- * @param mixed $event
- * @param mixed $members
- *
- * @return void
- */
-function update_user_final_grades($event, $members) {
-    global $DB;
-
-    list ($course, $cm) = get_course_and_cm_from_cmid($event->contextinstanceid, 'assign');
-
-    $sql = 'SELECT * FROM {assign_grades} WHERE userid = ? AND assignment = ? ORDER BY id DESC LIMIT 1';
-    $finalassigngrade = $DB->get_record_sql($sql, array($event->relateduserid, $cm->instance));
-
-    foreach ($members as $member) {
-        $memberid = $member->userid;
-        $sql = 'SELECT * FROM {assign_grades} WHERE userid = ? AND assignment = ? ORDER BY id DESC LIMIT 1';
-        $currentassigngrade = $DB->get_record_sql($sql, array($memberid, $cm->instance));
-
-        if (!empty($currentassigngrade)) {
-            $finalassigngrade->id = $currentassigngrade->id;
-            $finalassigngrade->userid = $memberid;
-            $DB->update_record('assign_grades', $finalassigngrade);
-        } else {
-            unset($finalassigngrade->id);
-            $finalassigngrade->userid = $memberid;
-            $DB->insert_record('assign_grades', $finalassigngrade);
-        }
-    }
-
-    $obj = array(
-            'iteminstance' => $event->get_assign()->get_grade_item()->iteminstance,
+    $gradeitems = $DB->get_record('grade_items', [
             'itemtype' => 'mod',
-            'itemmodule' => 'assign',
-            'courseid' => $course->id
-    );
-    $gradeitem = $DB->get_record('grade_items', $obj);
+            'itemmodule' => $module->name,
+            'iteminstance' => $cm->instance,
+    ]);
 
-    $obj = array(
-            'itemid' => $gradeitem->id,
-            'userid' => $event->relateduserid
-    );
-    $finalgradegrade = $DB->get_record('grade_grades', $obj);
-
-    foreach ($members as $member) {
-        $memberid = $member->userid;
-        $obj = array(
-                'itemid' => $gradeitem->id,
-                'userid' => $memberid
-        );
-        $currentgradegrade = $DB->get_record('grade_grades', $obj);
-
-        if (!empty($currentgradegrade)) {
-            $finalgradegrade->id = $currentgradegrade->id;
-            $finalgradegrade->userid = $memberid;
-            $DB->update_record('grade_grades', $finalgradegrade);
-        } else {
-            unset($finalgradegrade->id);
-            $finalgradegrade->userid = $memberid;
-            $DB->insert_record('grade_grades', $finalgradegrade);
-        }
+    if (!$gradeitems) {
+        return ['result' => json_encode(false)];
     }
+
+    $DB->delete_records('grade_grades', ['itemid' => $gradeitems->id, 'userid' => $userid]);
+
+    $assigngrades = $DB->get_records('assign_grades', ['assignment' => $cm->instance, 'userid' => $userid]);
+
+    $DB->delete_records('assign_grades', ['assignment' => $cm->instance, 'userid' => $userid]);
+
+    // Delete comments.
+    $submissions = $DB->get_records('assign_submission', ['assignment' => $cm->instance, 'userid' => $userid]);
+    foreach ($submissions as $submission) {
+        $obj = [
+                'component' => 'assignsubmission_comments',
+                'commentarea' => 'submission_comments',
+                'itemid' => $submission->id,
+        ];
+        $DB->delete_records('comments', $obj);
+    }
+
+    // Delete submitted data.
+    $DB->delete_records('assign_submission', ['assignment' => $cm->instance, 'userid' => $userid]);
+
+    // Delete feedback files.
+    foreach ($assigngrades as $grade) {
+        $DB->delete_records('assignfeedback_editpdf_annot', ['gradeid' => $grade->id]);
+        $DB->delete_records('assignfeedback_editpdf_cmnt', ['gradeid' => $grade->id]);
+
+        // Table files.
+        $DB->delete_records('files', [
+                'contextid' => $context->id,
+                'itemid' => $grade->id,
+                'component' => 'assignfeedback_editpdf'
+        ]);
+    }
+
+    // Delete user from card.
+    $DB->delete_records('local_teamwork_members', ['teamworkgroupid' => $teamid, 'userid' => $userid]);
+
+    return true;
 }
 
-/**
- * clone_fillings
- *
- * @param mixed $actualfillings
- * @param mixed $gradinginstanceid
- *
- * @return void
- */
-function clone_fillings($actualfillings, $gradinginstanceid, $tablename = 'gradingform_rubric_fillings') {
-    global $DB;
+function local_teamwork_voice_init() {
 
-    foreach ($actualfillings as $newfilling) {
-        $temp = clone $newfilling;
-        $temp->instanceid = $gradinginstanceid;
-        unset($temp->id);
-        $DB->insert_record($tablename, $temp);
+    $translations = get_string_manager()->get_list_of_translations();
+
+    $languages = [];
+    foreach ($translations as $key => $translation) {
+        $lang = new stdClass;
+        $lang->code = local_teamwork_get_full_lang_code($key);
+        $lang->name = $translation;
+        $languages[local_teamwork_get_full_lang_code($key)] = $lang;
     }
+
+    $html = local_teamwork_get_mainhtml(array_values($languages));
+
+    return $html;
+}
+
+function local_teamwork_get_full_lang_code($shortlangcode) {
+
+    switch ($shortlangcode) {
+        case 'ru':
+            $fulllangcode = 'ru-RU';
+            break;
+        case 'he_kids':
+            $fulllangcode = 'iw-IL';
+            break;
+        case 'he':
+            $fulllangcode = 'iw-IL';
+            break;
+        case 'en':
+            $fulllangcode = 'en-US';
+            break;
+        default:
+            $fulllangcode = 'en-US';
+            break;
+    }
+
+    return $fulllangcode;
+}
+
+function local_teamwork_get_mainhtml($languages) {
+    global $OUTPUT;
+
+    $html = $OUTPUT->render_from_template('local_teamwork/menuitem', ['languages' => $languages]);
+
+    return $html;
 }
 
 class assign_custom extends assign {
 
     public function __construct($coursemodulecontext, $coursemodule, $course) {
         parent::__construct($coursemodulecontext, $coursemodule, $course);
+    }
+
+    public function reopen_submission_if_required($userid, $submission, $addattempt) {
+        return parent::reopen_submission_if_required($userid, $submission, $addattempt);
     }
 
     /**
@@ -744,7 +725,7 @@ class assign_custom extends assign {
                 }
             } else {
                 // This is a scale.
-                if ($scale = $DB->get_record('scale', array('id' => -($this->get_instance()->grade)))) {
+                if ($scale = $DB->get_record('scale', ['id' => -($this->get_instance()->grade)])) {
                     $scaleoptions = make_menu_from_list($scale->scale);
                     if (!array_key_exists((int) $grade->grade, $scaleoptions)) {
                         return false;

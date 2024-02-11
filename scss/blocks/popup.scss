@@ -62,6 +62,12 @@
   }
   .teamwork-modal_close  {
     margin-left: auto;
+    border: none;
+    background-color: transparent;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .teamwork-modal_close {

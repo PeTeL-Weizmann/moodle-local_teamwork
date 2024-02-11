@@ -1,13 +1,17 @@
 define([
+    'core/str',
     'core/ajax',
     'local_teamwork/render',
     'local_teamwork/popup',
     'local_teamwork/loading',
     'local_teamwork/dragulasource',
-], function (Ajax, render, popup, loadingIcon, dragula) {
+    'core/modal_factory',
+    'core/modal_events',
+    'core/notification',
+], function (Str, Ajax, render, popup, loadingIcon, dragula, ModalFactory, ModalEvents, Notification) {
     'use strict';
 
-    const renderPageAfterDrag = (el, callback) => {
+    const renderPageAfterDrag = (el, removeteam, callback) => {
 
         const allTeamsBlocks = Array.from(document.querySelectorAll('div[data-team_id]'));
         const allTeams = [];
@@ -36,6 +40,7 @@ define([
                 selectgroupid: render.data.selectgroupid,
                 newteamspost: JSON.stringify(allTeams),
                 draguserid: Number(draguserid),
+                removeteam: removeteam,
             },
             done: function (data) {
                 loadingIcon.remove();
@@ -59,12 +64,63 @@ define([
             source.classList.remove('stop-drag');
         }
 
-        renderPageAfterDrag(el, function () {
-            render.setDefaultData();
-            render.studentList();
-            render.teamsCard();
-        });
+        if($(target).hasClass('teamwork_students')){
+            let item = $(source).parent().find('.teamwork_team-inner');
 
+            if(item.find('.teamwork_student').length === 0){
+                Str.get_strings([
+                    { key: 'titlepopupremoveteam', component: 'local_teamwork' },
+                    { key: 'contentpopupremoveteam', component: 'local_teamwork' },
+                    { key: 'buttonpopupremoveteam', component: 'local_teamwork' },
+                ]).done(function (strings) {
+
+                    var modalPromise = ModalFactory.create({
+                        type: ModalFactory.types.SAVE_CANCEL,
+                        title: strings[0],
+                        body: strings[1]
+                    });
+
+                    $.when(modalPromise).then(function (fmodal) {
+
+                        fmodal.setSaveButtonText(strings[2]);
+
+                        // Handle save event.
+                        fmodal.getRoot().on(ModalEvents.save, function (e) {
+                            e.preventDefault();
+
+                            renderPageAfterDrag(el, true, function () {
+                                render.setDefaultData();
+                                render.studentList();
+                                render.teamsCard();
+                            });
+
+                            fmodal.destroy();
+                        });
+
+                        fmodal.getRoot().on(ModalEvents.hidden, function () {
+
+                            renderPageAfterDrag(el, false, function () {
+                                render.setDefaultData();
+                                render.studentList();
+                                render.teamsCard();
+                            });
+
+                            fmodal.destroy();
+                        });
+
+                        return fmodal;
+                    }).done(function (modal) {
+                        modal.show();
+                    }).fail(Notification.exception);
+                })
+            }
+        }else{
+            renderPageAfterDrag(el, false, function () {
+                render.setDefaultData();
+                render.studentList();
+                render.teamsCard();
+            });
+        }
     };
 
     const drag = {
