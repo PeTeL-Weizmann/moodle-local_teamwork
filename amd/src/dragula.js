@@ -64,56 +64,75 @@ define([
             source.classList.remove('stop-drag');
         }
 
+        // If drag to student list.
         if($(target).hasClass('teamwork_students')){
             let item = $(source).parent().find('.teamwork_team-inner');
 
-            if(item.find('.teamwork_student').length === 0){
-                Str.get_strings([
-                    { key: 'titlepopupremoveteam', component: 'local_teamwork' },
-                    { key: 'contentpopupremoveteam', component: 'local_teamwork' },
-                    { key: 'buttonpopupremoveteam', component: 'local_teamwork' },
-                ]).done(function (strings) {
-
-                    var modalPromise = ModalFactory.create({
-                        type: ModalFactory.types.SAVE_CANCEL,
-                        title: strings[0],
-                        body: strings[1]
-                    });
-
-                    $.when(modalPromise).then(function (fmodal) {
-
-                        fmodal.setSaveButtonText(strings[2]);
-
-                        // Handle save event.
-                        fmodal.getRoot().on(ModalEvents.save, function (e) {
-                            e.preventDefault();
-
-                            renderPageAfterDrag(el, true, function () {
-                                render.setDefaultData();
-                                render.studentList();
-                                render.teamsCard();
-                            });
-
-                            fmodal.destroy();
-                        });
-
-                        fmodal.getRoot().on(ModalEvents.hidden, function () {
-
-                            renderPageAfterDrag(el, false, function () {
-                                render.setDefaultData();
-                                render.studentList();
-                                render.teamsCard();
-                            });
-
-                            fmodal.destroy();
-                        });
-
-                        return fmodal;
-                    }).done(function (modal) {
-                        modal.show();
-                    }).fail(Notification.exception);
-                })
+            // Delete user submission.
+            if ($(el).find('.delete_user_submit-btn').length) {
+                $(el).find('.delete_user_submit-btn')[0].click();
+            } else {
+                renderPageAfterDrag(el, false, function () {
+                    render.setDefaultData();
+                    render.studentList();
+                    render.teamsCard();
+                });
             }
+
+            // Close popup "remove teamcard".
+            // if(item.find('.teamwork_student').length === 0){
+            //     Str.get_strings([
+            //         { key: 'titlepopupremoveteam', component: 'local_teamwork' },
+            //         { key: 'contentpopupremoveteam', component: 'local_teamwork' },
+            //         { key: 'buttonpopupremoveteam', component: 'local_teamwork' },
+            //     ]).done(function (strings) {
+            //
+            //         var modalPromise = ModalFactory.create({
+            //             type: ModalFactory.types.SAVE_CANCEL,
+            //             title: strings[0],
+            //             body: strings[1]
+            //         });
+            //
+            //         $.when(modalPromise).then(function (fmodal) {
+            //
+            //             fmodal.setSaveButtonText(strings[2]);
+            //
+            //             // Handle save event.
+            //             fmodal.getRoot().on(ModalEvents.save, function (e) {
+            //                 e.preventDefault();
+            //
+            //                 renderPageAfterDrag(el, true, function () {
+            //                     render.setDefaultData();
+            //                     render.studentList();
+            //                     render.teamsCard();
+            //                 });
+            //
+            //                 fmodal.destroy();
+            //             });
+            //
+            //             fmodal.getRoot().on(ModalEvents.hidden, function () {
+            //
+            //                 renderPageAfterDrag(el, false, function () {
+            //                     render.setDefaultData();
+            //                     render.studentList();
+            //                     render.teamsCard();
+            //                 });
+            //
+            //                 fmodal.destroy();
+            //             });
+            //
+            //             return fmodal;
+            //         }).done(function (modal) {
+            //             modal.show();
+            //         }).fail(Notification.exception);
+            //     })
+            // }else{
+            //     renderPageAfterDrag(el, false, function () {
+            //         render.setDefaultData();
+            //         render.studentList();
+            //         render.teamsCard();
+            //     });
+            // }
         }else{
             renderPageAfterDrag(el, false, function () {
                 render.setDefaultData();

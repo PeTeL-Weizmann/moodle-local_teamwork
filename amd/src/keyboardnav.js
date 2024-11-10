@@ -48,7 +48,6 @@ define([], function () {
                 PREVFOCUSED.element = null;
                 this.setFocusOnElement();
             }
-            console.log('setFocusOnPrevfocusedElement', document.querySelector(PREVFOCUSED.element));
         },
         setAccessabilityBehaviuor: function () {
             FOCUSABLE.elements.forEach(element => {

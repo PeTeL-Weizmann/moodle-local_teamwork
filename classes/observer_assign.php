@@ -99,6 +99,9 @@ class observer_assign {
         // Copy previous edit file to feedback area for main user.
         self::copy_history_edit_file($event, $pathnamehashesedit);
 
+        // Update onlinetext.
+        self::update_onlinetext($event, $members);
+
         // Assign class.
         $context = \context_module::instance($cm->id);
         $assign = new \assign_custom($context, $cm, $course);

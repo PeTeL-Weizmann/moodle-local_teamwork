@@ -31,7 +31,9 @@ define([
             if (document.querySelector(`.raspberry_loading`)) {
                 $('.raspberry_loading').fadeOut('slow');
                 setTimeout(function (e) {
-                    document.querySelector('.raspberry_loading').remove();
+                    if (document.querySelector('.raspberry_loading') !== null) {
+                        document.querySelector('.raspberry_loading').remove();
+                    }
                 }, 1000);
             }
         }

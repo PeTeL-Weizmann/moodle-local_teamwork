@@ -403,6 +403,11 @@ define([
                 let target = event.target;
                 event.stopPropagation();
                 while (target !== mainBlock) {
+
+                    if (target === null) {
+                        break;
+                    }
+
                     // Activate/diactivate teamwork.
                     if (target.dataset.handler === 'teamwork_toggle') {
                         target.classList.toggle('active');
@@ -495,10 +500,12 @@ define([
                                     });
                                 });
                                 fmodal.getRoot().on(ModalEvents.cancel, function(e) {
+                                    render.setDefaultData();
+                                    render.studentList();
+                                    render.teamsCard();
                                     $('.skin.shadow').removeAttr("style");
                                     fmodal.destroy();
                                     Keyboardnav.setFocusOnPrevfocusedElement();
-                                    console.log('cancel');
                                 });
 
                                 var root = fmodal.getRoot();
@@ -506,11 +513,14 @@ define([
                                     $('.skin.shadow').css("z-index", "1000");
                                 });
 
-                              /*   root.on(ModalEvents.hidden, function() {
-                                    console.log('hidfeded');
+                                root.on(ModalEvents.hidden, function() {
+                                    render.setDefaultData();
+                                    render.studentList();
+                                    render.teamsCard();
                                     $('.skin.shadow').removeAttr("style");
                                     fmodal.destroy();
-                                }); */
+                                    Keyboardnav.setFocusOnPrevfocusedElement();
+                                });
 
                                 return fmodal;
                             }).done(function(modal) {
@@ -523,7 +533,6 @@ define([
 
                     // Get data from popup form.
                     if (target.dataset.handler === 'get_popup_data') {
-                        console.log(event.type);
                         event.preventDefault();
                         student_settings_popup_data(courseid, activityid, moduletype);
                         popup.remove();

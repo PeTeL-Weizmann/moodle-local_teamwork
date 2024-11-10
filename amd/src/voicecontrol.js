@@ -357,29 +357,15 @@ define([
     // TODO: commands w/ confirmation?
     let get_commands = () => {
 
-        // console.log('get_commands');
-
-        // console.log('schemes');
-        // console.log(schemes);
-
         default_commands.forEach((element, index) => {
 
             var scheme_id = element.command_id;
-            // console.log(scheme_id);
-
-
-
             default_commands[index].scheme = schemes[scheme_id];
         });
 
-        // console.log('default_commands');
-        // console.log(default_commands);
-
         commands = default_commands;
-
-        // console.log('commands');
-        // console.log(commands);
     }
+
     // get_commands();
     var state = 'disabled'; // enabled, token, command...
     //////////////////////////////////////////////////////////////////////////////////////
@@ -391,7 +377,7 @@ define([
             shorter = s1;
         }
         var longerLength = longer.length;
-        if (longerLength == 0) {
+        if (longerLength === 0) {
             return 1.0;
         }
         return (longerLength - editDistance(longer, shorter)) / parseFloat(longerLength);
@@ -403,12 +389,12 @@ define([
         for (var i = 0; i <= s1.length; i++) {
             var lastValue = i;
             for (var j = 0; j <= s2.length; j++) {
-                if (i == 0)
+                if (i === 0)
                     costs[j] = j;
                 else {
                     if (j > 0) {
                         var newValue = costs[j - 1];
-                        if (s1.charAt(i - 1) != s2.charAt(j - 1))
+                        if (s1.charAt(i - 1) !== s2.charAt(j - 1))
                             newValue = Math.min(Math.min(newValue, lastValue),
                                 costs[j]) + 1;
                         costs[j - 1] = lastValue;
@@ -421,7 +407,7 @@ define([
         }
         return costs[s2.length];
     }
-    //////////////////////////////////////////////////////////
+
     const stringSimilarity = (a, b) =>
         _stringSimilarity(prep(a), prep(b))
 
@@ -437,10 +423,7 @@ define([
 
     const prep = (str) => {  // TODO: unicode support?
 
-        // console.log('current_short_langcode in prep');
-        // console.log(current_short_langcode);
-
-        return current_short_langcode != 'iw' ? str.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ') : str.toLowerCase().replace('^[a-z\u0590-\u05fe]+$', ' ');
+        return current_short_langcode !== 'iw' ? str.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ') : str.toLowerCase().replace('^[a-z\u0590-\u05fe]+$', ' ');
     }
 
     // str.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ')
@@ -457,21 +440,10 @@ define([
     //////////////////////////////////////////////////////////////////////
 
     let find_match = (input, stack, threshold = 0.35) => {
-        // // console.log('find_match'); console.log('input');
-        // console.log(input);
-        // console.log('stack');
-        // console.log(stack);
-
         var result = null;
         var list = [];
         input = input.toLowerCase();
         stack.forEach((element, index) => {
-
-            // console.log('element');
-            // console.log(index + ' - ' + element);
-
-            // console.log('typeof(element)');
-            // console.log(typeof (element));
             var el_vars = typeof (element) != 'string' ? element : [element];            // var el_vars = element;
             var el_weight = 0;
             var sim = 0;
@@ -487,20 +459,13 @@ define([
             list.push([index, el_weight, scheme_option]);
         });
 
-        // console.log('list: ');
-        // console.table(list);
-
         list.sort((a, b) => b[1] - a[1]);
-
-        // console.log('list: ');
-        // console.table(list);
 
         result = list[0];
         if (result[1] < threshold) {
             return null;
         }
-        // console.log('result');
-        // console.log(result);
+
         return result;
     }
     const extract = (template, str) => {
@@ -531,7 +496,6 @@ define([
 
 
         tokens.some(function (el) {
-            // console.log(el);
             if (input.includes(el)) {
                 match = true;
                 return;
@@ -540,22 +504,13 @@ define([
 
         if (match) {
 
-            console.log('speechRecognition');
-            console.log(speechRecognition);
-
             // debugger;
-            console.log('speechRecognition STOP');
-            // speechRecognition.abort();
             speechRecognition.abort();
-
 
             setTimeout(() => {
                 speechRecognition.start();
                 // set_state('enabled');
-                console.log('speechRecognition START');
             }, 500)
-
-
 
             sound('ready');
             set_state('command');
@@ -569,8 +524,6 @@ define([
 
     var match_command = (input) => {
 
-        // console.log('input: ' + input);
-
         var found = false;
         var commands_schemes = commands.map((i, el) => {
             return i.scheme;
@@ -582,16 +535,11 @@ define([
 
             var found_scheme = found.scheme[index[2]].trim();
 
-            // console.log('found command: ' + found_scheme);
-
             if (found.params.placeholders) {
                 var matched_params = {};
                 var input_values = extract(found_scheme, input);
                 let plhdrs = found.params.placeholders;
                 let arr_plhdrs = Object.entries(plhdrs);
-
-                // console.log('arr_plhdrs');
-                // console.log(arr_plhdrs);
 
                 arr_plhdrs.forEach((element, key) => {
                     var el_name = element[0];
@@ -612,9 +560,7 @@ define([
                     }
                 });
 
-                // console.log('matched_params: ');
-                // console.table(matched_params);
-                if (arr_plhdrs.length != Object.entries(matched_params).length) {
+                if (arr_plhdrs.length !== Object.entries(matched_params).length) {
                     set_state('enabled');
                     sound('timeout');
                     return false;
@@ -661,7 +607,7 @@ define([
         // msg.lang = current_langcode;
         var lang_for_speech = '';
 
-        if (current_short_langcode == 'iw') {
+        if (current_short_langcode === 'iw') {
             lang_for_speech = 'he';
         } else {
             // TODO: HACK speech HE in EN
@@ -821,7 +767,6 @@ define([
 
             // set_state('enabled');
 
-
             speechRecognition = new webkitSpeechRecognition();
             var SpeechGrammarList = SpeechGrammarList || window.webkitSpeechGrammarList
             if (SpeechGrammarList) {
@@ -870,52 +815,28 @@ define([
             speechRecognition.onresult = (event) => {
                 let interim_transcript = "";
 
-                // console.log(event);
-
-                // if (event.) {
-
-                // }
-
-                // Array.from(event.results).forEach(el => {
-                //     console.log('----------------');
-
-                //     Array.from(el).forEach(element => {
-                //         console.log(element.confidence + ' ->              ' + element.transcript);
-                //     });
-                //     console.log('isFinal -> ' + el.isFinal);
-                //     console.log('length -> ' + el.length);
-                //     console.log('----------------');
-                //     console.log(' ');
-
-
-                // });
-
-                // console.log('==================================');
-
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
 
                     if (event.results[i].isFinal) {
                         final_transcript = event.results[i][0].transcript.trim();
-                        if (state == 'enabled') {
+                        if (state === 'enabled') {
                             // match_token(final_transcript);
-                        } else if (state == 'command') {
+                        } else if (state === 'command') {
                             match_command(final_transcript);
                         }
                     } else {
                         interim_transcript = event.results[i][0].transcript.trim();
 
-                        console.log(interim_transcript);
-
                         // var words = interim_transcript.split(); // TODO:
 
-                        if (state == 'enabled') {
+                        if (state === 'enabled') {
                             match_token(interim_transcript);
-                        } else if (state == 'command') {
+                        } else if (state === 'command') {
                             // match_command(interim_transcript);
                         }
 
 
-                        if (state == 'command') {
+                        if (state === 'command') {
                             start_timer(timeout, () => {
                                 set_state('enabled');
                                 sound('timeout');
@@ -935,8 +856,6 @@ define([
                 //     } else {
                 //         // interim_transcript += event.results[i][0].transcript;
                 //         interim_transcript = event.results[i][0].transcript;
-
-                //         console.log(interim_transcript);
 
                 //         if (state == 'enabled') {
                 //             match_token(interim_transcript);
@@ -1061,7 +980,7 @@ define([
         if (x != null) {
             g = g + x;
         }
-        else if (w == "hundred") {
+        else if (w === "hundred") {
             g = g * 100;
         }
         else {
@@ -1084,19 +1003,13 @@ define([
             reinit();
         },
         init: function (currentlangcode, paths, inputtokens, inputschemes) {
-
-            // console.log('currentlangcode');
-            // console.log(currentlangcode);
-
             ready_sound_path = paths[0];
             correct_sound_path = paths[1];
             timeout_sound_path = paths[2];
             please_repeat_sound_path = paths[3];
             sample_sound_path = paths[4];
             tokens = inputtokens;
-            // console.log(inputtokens);
             schemes = inputschemes;
-            // console.log(inputschemes);
             set_lang(currentlangcode);
             init_vtt();
         },
