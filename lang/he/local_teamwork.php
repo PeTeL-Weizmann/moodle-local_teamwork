@@ -125,8 +125,10 @@ $string['scheme_11'] = '11';
 $string['scheme_11_desc'] = '11';
 $string['scheme_11_default'] = 'תשיר';
 
-$string['titlepopupremoveuser'] = 'הסרת ההגשת';
-$string['contentpopupremoveuser'] = 'האם אתה רוצה להסיר ההגשה והציון של המשתמש?';
+$string['titlepopupremoveuser'] = 'הסרת ההגשה ואיפוס הציון';
+$string['contentpopupremoveuser'] = 'לתשומת לבך, פעולה זו מסירה את התלמיד/ה שבחרת מהצוות, וכן מוחקת את ההגשה והציון הקיימים עבור התלמיד/ה.
+הערה: על מנת להעביר תלמיד/ה מהצוות למקום כלשהו (לצוות אחר או לרשימה הכללית), ניתן להשתמש בפעולת גרירה.
+האם ברצונך להסיר את ההגשה והציון של התלמיד/ה?';
 $string['buttonpopupremoveuser'] = 'להסיר ההגשה';
 
 $string['titlepopupremoveteam'] = 'הסרת צוות';

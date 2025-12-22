@@ -25,6 +25,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2022080813;
+$plugin->version = 2022080814;
 $plugin->requires = 2017050500;
 $plugin->component = 'local_teamwork';

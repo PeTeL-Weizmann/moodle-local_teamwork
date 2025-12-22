@@ -101,7 +101,7 @@ define([
         }]);
     };
 
-    const delete_user_submit = (userid, teamid, courseid, activityid, moduletype, callback) => {
+    const delete_user_submit = (userid, teamid, courseid, activityid, moduletype, ifdelete, callback) => {
 
         loadingIcon.show();
         Ajax.call([{
@@ -111,7 +111,8 @@ define([
                 teamid: teamid,
                 courseid: Number(courseid),
                 activityid: Number(activityid),
-                moduletype: moduletype
+                moduletype: moduletype,
+                ifdelete: ifdelete,
             },
             done: function(data) {
                 loadingIcon.remove();
@@ -122,6 +123,75 @@ define([
                 popup.error();
             }
         }]);
+    };
+
+    const popup_delete_user_submit = (userid, teamid, courseid, activityid, moduletype) => {
+
+        Str.get_strings([
+            {key: 'titlepopupremoveuser', component: 'local_teamwork'},
+            {key: 'contentpopupremoveuser', component: 'local_teamwork'},
+            {key: 'buttonpopupremoveuser', component: 'local_teamwork'},
+        ]).done(function(strings) {
+            var modalPromise = ModalFactory.create({
+                type: ModalFactory.types.SAVE_CANCEL,
+                title: strings[0],
+                body: strings[1]
+            });
+
+            $.when(modalPromise).then(function(fmodal) {
+
+                fmodal.setSaveButtonText(strings[2]);
+
+                // Handle save event.
+                fmodal.getRoot().on(ModalEvents.save, function(e) {
+                    e.preventDefault();
+
+                    delete_user_submit(userid, teamid, courseid, activityid, moduletype, true, function() {
+                        render.setDefaultData();
+                        render.studentList();
+                        render.teamsCard();
+                        $('.skin.shadow').removeAttr("style");
+                        fmodal.destroy();
+                    });
+                });
+
+                fmodal.getRoot().on(ModalEvents.cancel, function(e) {
+                    // delete_user_submit(userid, teamid, courseid, activityid, moduletype, false, function() {
+                    //     render.setDefaultData();
+                    //     render.studentList();
+                    //     render.teamsCard();
+                    //     $('.skin.shadow').removeAttr("style");
+                    //     fmodal.destroy();
+                    //     Keyboardnav.setFocusOnPrevfocusedElement();
+                    // });
+
+                    render.setDefaultData();
+                    render.studentList();
+                    render.teamsCard();
+                    $('.skin.shadow').removeAttr("style");
+                    fmodal.destroy();
+                    Keyboardnav.setFocusOnPrevfocusedElement();
+                });
+
+                var root = fmodal.getRoot();
+                root.on(ModalEvents.shown, function() {
+                    $('.skin.shadow').css("z-index", "1000");
+                });
+
+                root.on(ModalEvents.hidden, function() {
+                    render.setDefaultData();
+                    render.studentList();
+                    render.teamsCard();
+                    $('.skin.shadow').removeAttr("style");
+                    fmodal.destroy();
+                    Keyboardnav.setFocusOnPrevfocusedElement();
+                });
+
+                return fmodal;
+            }).done(function(modal) {
+                modal.show();
+            }).fail(Notification.exception);
+        });
     };
 
     const show_random_popup = () => {
@@ -450,6 +520,10 @@ define([
                             Voicecontrol.stop();
                         }
                         skin.remove();
+                        const oplocalbtn = document.getElementById("open_local");
+                        if (oplocalbtn && oplocalbtn.hasAttribute("data-redirect")) {
+                            location.reload();
+                        }
                         return;
                     }
 
@@ -472,61 +546,32 @@ define([
                         let teamid = target.dataset.teamid;
                         Keyboardnav.setPrevfocusedElement(`[data-userid="${userid}"]`);
 
-                        Str.get_strings([
-                            {key: 'titlepopupremoveuser', component: 'local_teamwork'},
-                            {key: 'contentpopupremoveuser', component: 'local_teamwork'},
-                            {key: 'buttonpopupremoveuser', component: 'local_teamwork'},
-                        ]).done(function(strings) {
-                            var modalPromise = ModalFactory.create({
-                                type: ModalFactory.types.SAVE_CANCEL,
-                                title: strings[0],
-                                body: strings[1]
-                            });
+                        // TODO
 
-                            $.when(modalPromise).then(function(fmodal) {
-
-                                fmodal.setSaveButtonText(strings[2]);
-
-                                // Handle save event.
-                                fmodal.getRoot().on(ModalEvents.save, function(e) {
-                                    e.preventDefault();
-
-                                    delete_user_submit(userid, teamid, courseid, activityid, moduletype, function() {
+                        Ajax.call([{
+                            methodname: 'local_teamwork_check_user_submit',
+                            args: {
+                                userid: userid,
+                                teamid: teamid,
+                                courseid: Number(courseid),
+                                activityid: Number(activityid),
+                                moduletype: moduletype,
+                            },
+                            done: function(data) {
+                                if (data.result === 'true') {
+                                    popup_delete_user_submit(userid, teamid, courseid, activityid, moduletype);
+                                } else {
+                                    delete_user_submit(userid, teamid, courseid, activityid, moduletype, false, function() {
                                         render.setDefaultData();
                                         render.studentList();
                                         render.teamsCard();
-                                        $('.skin.shadow').removeAttr("style");
-                                        fmodal.destroy();
                                     });
-                                });
-                                fmodal.getRoot().on(ModalEvents.cancel, function(e) {
-                                    render.setDefaultData();
-                                    render.studentList();
-                                    render.teamsCard();
-                                    $('.skin.shadow').removeAttr("style");
-                                    fmodal.destroy();
-                                    Keyboardnav.setFocusOnPrevfocusedElement();
-                                });
-
-                                var root = fmodal.getRoot();
-                                root.on(ModalEvents.shown, function() {
-                                    $('.skin.shadow').css("z-index", "1000");
-                                });
-
-                                root.on(ModalEvents.hidden, function() {
-                                    render.setDefaultData();
-                                    render.studentList();
-                                    render.teamsCard();
-                                    $('.skin.shadow').removeAttr("style");
-                                    fmodal.destroy();
-                                    Keyboardnav.setFocusOnPrevfocusedElement();
-                                });
-
-                                return fmodal;
-                            }).done(function(modal) {
-                                modal.show();
-                            }).fail(Notification.exception);
-                        });
+                                }
+                            },
+                            fail: function() {
+                                popup.error();
+                            }
+                        }]);
 
                         return;
                     }

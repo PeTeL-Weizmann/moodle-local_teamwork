@@ -576,16 +576,78 @@ function add_new_card($cmid, $moduletype, $selectgroupid, $courseid, $name = nul
     return true;
 }
 
-function delete_user_submit($userid, $teamid, $cmid) {
+function delete_user_submit($userid, $teamid, $cmid, $ifdelete) {
     global $DB;
 
-    // Delete grade.
+    if ($ifdelete) {
+
+        // Delete grade.
+        $cm = $DB->get_record('course_modules', ['id' => $cmid]);
+        if (!$cm) {
+            return false;
+        }
+
+        $context = \context_module::instance($cm->id);
+        $module = $DB->get_record('modules', ['id' => $cm->module]);
+
+        $gradeitems = $DB->get_record('grade_items', [
+            'itemtype' => 'mod',
+            'itemmodule' => $module->name,
+            'iteminstance' => $cm->instance,
+        ]);
+
+        if (!$gradeitems) {
+            return ['result' => json_encode(false)];
+        }
+
+        $DB->delete_records('grade_grades', ['itemid' => $gradeitems->id, 'userid' => $userid]);
+
+        $assigngrades = $DB->get_records('assign_grades', ['assignment' => $cm->instance, 'userid' => $userid]);
+
+        $DB->delete_records('assign_grades', ['assignment' => $cm->instance, 'userid' => $userid]);
+
+        // Delete comments.
+        $submissions = $DB->get_records('assign_submission', ['assignment' => $cm->instance, 'userid' => $userid]);
+        foreach ($submissions as $submission) {
+            $obj = [
+                'component' => 'assignsubmission_comments',
+                'commentarea' => 'submission_comments',
+                'itemid' => $submission->id,
+            ];
+            $DB->delete_records('comments', $obj);
+        }
+
+        // Delete submitted data.
+        $DB->delete_records('assign_submission', ['assignment' => $cm->instance, 'userid' => $userid]);
+
+        // Delete feedback files.
+        foreach ($assigngrades as $grade) {
+            $DB->delete_records('assignfeedback_editpdf_annot', ['gradeid' => $grade->id]);
+            $DB->delete_records('assignfeedback_editpdf_cmnt', ['gradeid' => $grade->id]);
+
+            // Table files.
+            $DB->delete_records('files', [
+                'contextid' => $context->id,
+                'itemid' => $grade->id,
+                'component' => 'assignfeedback_editpdf'
+            ]);
+        }
+    }
+
+    // Delete user from card.
+    $DB->delete_records('local_teamwork_members', ['teamworkgroupid' => $teamid, 'userid' => $userid]);
+
+    return true;
+}
+
+function check_user_submit($userid, $cmid) {
+    global $DB;
+
     $cm = $DB->get_record('course_modules', ['id' => $cmid]);
     if (!$cm) {
         return false;
     }
 
-    $context = \context_module::instance($cm->id);
     $module = $DB->get_record('modules', ['id' => $cm->module]);
 
     $gradeitems = $DB->get_record('grade_items', [
@@ -595,46 +657,22 @@ function delete_user_submit($userid, $teamid, $cmid) {
     ]);
 
     if (!$gradeitems) {
-        return ['result' => json_encode(false)];
+        return false;
     }
 
-    $DB->delete_records('grade_grades', ['itemid' => $gradeitems->id, 'userid' => $userid]);
+    //if ($gradegrades = $DB->get_records('grade_grades', ['itemid' => $gradeitems->id, 'userid' => $userid])) {
+    //    return true;
+    //}
 
-    $assigngrades = $DB->get_records('assign_grades', ['assignment' => $cm->instance, 'userid' => $userid]);
-
-    $DB->delete_records('assign_grades', ['assignment' => $cm->instance, 'userid' => $userid]);
-
-    // Delete comments.
-    $submissions = $DB->get_records('assign_submission', ['assignment' => $cm->instance, 'userid' => $userid]);
-    foreach ($submissions as $submission) {
-        $obj = [
-                'component' => 'assignsubmission_comments',
-                'commentarea' => 'submission_comments',
-                'itemid' => $submission->id,
-        ];
-        $DB->delete_records('comments', $obj);
+    if ($assigngrades = $DB->get_records('assign_grades', ['assignment' => $cm->instance, 'userid' => $userid])) {
+        return true;
     }
 
-    // Delete submitted data.
-    $DB->delete_records('assign_submission', ['assignment' => $cm->instance, 'userid' => $userid]);
-
-    // Delete feedback files.
-    foreach ($assigngrades as $grade) {
-        $DB->delete_records('assignfeedback_editpdf_annot', ['gradeid' => $grade->id]);
-        $DB->delete_records('assignfeedback_editpdf_cmnt', ['gradeid' => $grade->id]);
-
-        // Table files.
-        $DB->delete_records('files', [
-                'contextid' => $context->id,
-                'itemid' => $grade->id,
-                'component' => 'assignfeedback_editpdf'
-        ]);
+    if ($submissions = $DB->get_records('assign_submission', ['assignment' => $cm->instance, 'status' => 'submitted', 'userid' => $userid])) {
+        return true;
     }
 
-    // Delete user from card.
-    $DB->delete_records('local_teamwork_members', ['teamworkgroupid' => $teamid, 'userid' => $userid]);
-
-    return true;
+    return false;
 }
 
 function local_teamwork_voice_init() {

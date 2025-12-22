@@ -193,4 +193,14 @@ $functions = array(
                 'ajax' => true,
                 'services' => array(MOODLE_OFFICIAL_MOBILE_SERVICE)
         ),
+
+        'local_teamwork_check_user_submit' => array(
+                'classname' => 'local_teamwork_external',
+                'methodname' => 'check_user_submit',
+                'classpath' => 'local/teamwork/externallib.php',
+                'description' => 'Check user submit.',
+                'type' => 'read',
+                'ajax' => true,
+                'services' => array(MOODLE_OFFICIAL_MOBILE_SERVICE)
+        ),
 );

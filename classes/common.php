@@ -58,6 +58,7 @@ class common {
                         (ue_f.timeend = '0' AND ue_f.timestart < UNIX_TIMESTAMP()) OR
                         (ue_f.timeend > UNIX_TIMESTAMP() AND ue_f.timestart < UNIX_TIMESTAMP())
                     )
+                LIMIT 1
             ";
         $team = $DB->get_record_sql($sql, [$cm->course, $instanceid, $userid]);
 
@@ -125,10 +126,8 @@ class common {
     }
 
     public static function is_quiz_enable($cmid) {
-        $lqsoptions = local_quiz_summary_option_get_quiz_config($cmid);
+        $lqsoptions = \local_quiz_summary_option\funcs::get_quiz_config($cmid);
 
-        $flag = isset($lqsoptions->summary_teamwork) ? $lqsoptions->summary_teamwork : 1;
-
-        return ($flag == 1) ? false : true;
+        return ($lqsoptions->summary_teamwork == 1) ? false : true;
     }
 }

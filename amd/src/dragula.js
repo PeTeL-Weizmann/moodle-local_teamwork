@@ -1,4 +1,5 @@
 define([
+    'jquery',
     'core/str',
     'core/ajax',
     'local_teamwork/render',
@@ -7,8 +8,9 @@ define([
     'local_teamwork/dragulasource',
     'core/modal_factory',
     'core/modal_events',
+    'local_teamwork/keyboardnav',
     'core/notification',
-], function (Str, Ajax, render, popup, loadingIcon, dragula, ModalFactory, ModalEvents, Notification) {
+], function ($, Str, Ajax, render, popup, loadingIcon, dragula, ModalFactory, ModalEvents, Keyboardnav, Notification) {
     'use strict';
 
     const renderPageAfterDrag = (el, removeteam, callback) => {
@@ -68,16 +70,22 @@ define([
         if($(target).hasClass('teamwork_students')){
             let item = $(source).parent().find('.teamwork_team-inner');
 
+            renderPageAfterDrag(el, true, function () {
+                render.setDefaultData();
+                render.studentList();
+                render.teamsCard();
+            });
+
             // Delete user submission.
-            if ($(el).find('.delete_user_submit-btn').length) {
-                $(el).find('.delete_user_submit-btn')[0].click();
-            } else {
-                renderPageAfterDrag(el, false, function () {
-                    render.setDefaultData();
-                    render.studentList();
-                    render.teamsCard();
-                });
-            }
+            // if ($(el).find('.delete_user_submit-btn').length) {
+            //     $(el).find('.delete_user_submit-btn')[0].click();
+            // } else {
+            //     renderPageAfterDrag(el, false, function () {
+            //         render.setDefaultData();
+            //         render.studentList();
+            //         render.teamsCard();
+            //     });
+            // }
 
             // Close popup "remove teamcard".
             // if(item.find('.teamwork_student').length === 0){
@@ -134,6 +142,77 @@ define([
             //     });
             // }
         }else{
+
+
+            let item = $(source).parent().find('.teamwork_team-inner');
+
+            // Delete user submission.
+            // if ($(el).find('.delete_user_submit-btn').length) {
+            //
+            //     Str.get_strings([
+            //         {key: 'titlepopupremoveuser', component: 'local_teamwork'},
+            //         {key: 'contentpopupremoveuser', component: 'local_teamwork'},
+            //         {key: 'buttonpopupremoveuser', component: 'local_teamwork'},
+            //     ]).done(function(strings) {
+            //         var modalPromise = ModalFactory.create({
+            //             type: ModalFactory.types.SAVE_CANCEL,
+            //             title: strings[0],
+            //             body: strings[1]
+            //         });
+            //
+            //         $.when(modalPromise).then(function(fmodal) {
+            //
+            //             fmodal.setSaveButtonText(strings[2]);
+            //
+            //             // Handle save event.
+            //             fmodal.getRoot().on(ModalEvents.save, function(e) {
+            //                 e.preventDefault();
+            //
+            //                 renderPageAfterDrag(el, false, function () {
+            //                     render.setDefaultData();
+            //                     render.studentList();
+            //                     render.teamsCard();
+            //                     $('.skin.shadow').removeAttr("style");
+            //                     fmodal.destroy();
+            //                 });
+            //             });
+            //
+            //             fmodal.getRoot().on(ModalEvents.cancel, function(e) {
+            //                 render.setDefaultData();
+            //                 render.studentList();
+            //                 render.teamsCard();
+            //                 $('.skin.shadow').removeAttr("style");
+            //                 fmodal.destroy();
+            //                 Keyboardnav.setFocusOnPrevfocusedElement();
+            //             });
+            //
+            //             var root = fmodal.getRoot();
+            //             root.on(ModalEvents.shown, function() {
+            //                 $('.skin.shadow').css("z-index", "1000");
+            //             });
+            //
+            //             root.on(ModalEvents.hidden, function() {
+            //                 render.setDefaultData();
+            //                 render.studentList();
+            //                 render.teamsCard();
+            //                 $('.skin.shadow').removeAttr("style");
+            //                 fmodal.destroy();
+            //                 Keyboardnav.setFocusOnPrevfocusedElement();
+            //             });
+            //
+            //             return fmodal;
+            //         }).done(function(modal) {
+            //             modal.show();
+            //         }).fail(Notification.exception);
+            //     });
+            // } else {
+            //     renderPageAfterDrag(el, false, function () {
+            //         render.setDefaultData();
+            //         render.studentList();
+            //         render.teamsCard();
+            //     });
+            // }
+
             renderPageAfterDrag(el, false, function () {
                 render.setDefaultData();
                 render.studentList();

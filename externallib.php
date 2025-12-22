@@ -927,14 +927,14 @@ class local_teamwork_external extends external_api {
         if (if_user_student_on_course($courseid) && $draguserid != $USER->id) {
             $students = get_students_by_select($selectgroupid, $courseid, $activityid, $moduletype);
 
-            $flag = 0;
+            $flagerr = 0;
             foreach ($students as $student) {
                 if ($student->userid == $draguserid) {
-                    $flag = 1;
+                    $flagerr = 1;
                 }
             }
 
-            if (!$flag) {
+            if (!$flagerr) {
                 return json_encode(['error' => 1, 'errormsg' => get_string('errordragdrop', 'local_teamwork')]);
             }
         }
@@ -947,25 +947,25 @@ class local_teamwork_external extends external_api {
             }
         }
 
-        if ($flag) {
-            $teamid = 0;
-            $groups = $DB->get_records('local_teamwork_groups', ['teamworkid' => $teamwork->id]);
-            foreach ($groups as $group) {
-                $members = $DB->get_records('local_teamwork_members', ['teamworkgroupid' => $group->id], '', 'userid');
-                foreach ($members as $member) {
-                    if ($member->userid == $draguserid) {
-                        $teamid = $group->id;
-                    }
+        // Get teamid.
+        $teamid = 0;
+        $groups = $DB->get_records('local_teamwork_groups', ['teamworkid' => $teamwork->id]);
+        foreach ($groups as $group) {
+            $members = $DB->get_records('local_teamwork_members', ['teamworkgroupid' => $group->id], '', 'userid');
+            foreach ($members as $member) {
+                if ($member->userid == $draguserid) {
+                    $teamid = $group->id;
                 }
             }
+        }
 
-            delete_user_submit($draguserid, $teamid, $activityid);
+        // Delete users submit.
+        //delete_user_submit($draguserid, $teamid, $activityid);
 
-            if ($removeteam) {
-                $users = $DB->get_records('local_teamwork_members', array('teamworkgroupid' => $teamid));
-                if (!$users) {
-                    $DB->delete_records('local_teamwork_groups', array('id' => $teamid));
-                }
+        if ($flag && $removeteam) {
+            $users = $DB->get_records('local_teamwork_members', array('teamworkgroupid' => $teamid));
+            if (!$users) {
+                $DB->delete_records('local_teamwork_groups', array('id' => $teamid));
             }
         }
 
@@ -1262,6 +1262,7 @@ class local_teamwork_external extends external_api {
                         'courseid' => new external_value(PARAM_INT, 'course id int', VALUE_DEFAULT, null),
                         'activityid' => new external_value(PARAM_INT, 'activity id int', VALUE_DEFAULT, null),
                         'moduletype' => new external_value(PARAM_RAW, 'moduletype text', VALUE_DEFAULT, null),
+                        'ifdelete' => new external_value(PARAM_BOOL, 'if delete int', VALUE_DEFAULT, false),
                 )
         );
     }
@@ -1290,7 +1291,72 @@ class local_teamwork_external extends external_api {
      * @param string $selectgroupid
      * @return array
      */
-    public static function delete_user_submit($userid, $teamid, $courseid, $activityid, $moduletype) {
+    public static function delete_user_submit($userid, $teamid, $courseid, $activityid, $moduletype, $ifdelete) {
+        global $USER;
+
+        $context = context_user::instance($USER->id);
+        self::validate_context($context);
+
+        $params = self::validate_parameters(self::delete_user_submit_parameters(),
+                array(
+                        'userid' => $userid,
+                        'teamid' => $teamid,
+                        'courseid' => $courseid,
+                        'activityid' => $activityid,
+                        'moduletype' => $moduletype,
+                        'ifdelete' => $ifdelete,
+                )
+        );
+
+        $result = delete_user_submit($params['userid'], $params['teamid'], $params['activityid'], $params['ifdelete']);
+
+        return array('result' => json_encode($result));
+    }
+
+    // Delete user submit.
+
+    /**
+     * Returns description of method parameters
+     *
+     * @return external_function_parameters
+     */
+    public static function check_user_submit_parameters() {
+        return new external_function_parameters(
+                array(
+                        'userid' => new external_value(PARAM_INT, 'user id int', VALUE_DEFAULT, null),
+                        'teamid' => new external_value(PARAM_INT, 'team id int', VALUE_DEFAULT, null),
+                        'courseid' => new external_value(PARAM_INT, 'course id int', VALUE_DEFAULT, null),
+                        'activityid' => new external_value(PARAM_INT, 'activity id int', VALUE_DEFAULT, null),
+                        'moduletype' => new external_value(PARAM_RAW, 'moduletype text', VALUE_DEFAULT, null),
+                )
+        );
+    }
+
+    /**
+     * Returns result
+     *
+     * @return external_single_structure
+     */
+    public static function check_user_submit_returns() {
+        return new external_single_structure(
+                array(
+                        'result' => new external_value(PARAM_RAW, 'result bool'),
+                )
+        );
+    }
+
+    /**
+     * Add share task
+     *
+     * @param int $userid
+     * @param int $teamid
+     * @param int $courseid
+     * @param int $activityid
+     * @param string $moduletype
+     * @param string $selectgroupid
+     * @return array
+     */
+    public static function check_user_submit($userid, $teamid, $courseid, $activityid, $moduletype) {
         global $USER;
 
         $context = context_user::instance($USER->id);
@@ -1306,7 +1372,7 @@ class local_teamwork_external extends external_api {
                 )
         );
 
-        $result = delete_user_submit($params['userid'], $params['teamid'], $params['activityid']);
+        $result = check_user_submit($params['userid'], $params['activityid']);
 
         return array('result' => json_encode($result));
     }
