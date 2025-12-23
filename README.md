@@ -9,6 +9,7 @@ Version 3.8 (2022080814), release 3 - 2025.12.22
 Change Log
 ----------
 * Version 3.8 (2022080814), release 3 - 2025.12.22 - Moodle 4.5 version
+** To support Teams in Quizzes, we use https://github.com/PeTeL-Weizmann/moodle-local_quiz_summary_option that needs to be installed too, as of this version. or you can disable the call to function is_quiz_enable in the code. 
 * Version 3.7 (2022080813), release 2 - 2023.09.02 - Moodle 4.1 version
 * 3.6, release 1    2019.03.13
 
