@@ -1,5 +1,6 @@
 # moodle-local_teamwork
 A Moodle plugin that enables a teacher to team up students for each assignment in different ad hoc teams, where each submission and feedback is copied to all team members.
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/PeTeL-Weizmann/moodle-local_teamwork)
 
 Filter Team Work for assignment submission
 ============
